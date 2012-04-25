@@ -2,11 +2,12 @@
 """
 Abstraction of filesystem mount points for OS/X
 """
-import re
+import os,re
 from subprocess import check_output,CalledProcessError
 from mactypes import Alias
 
 from systematic.filesystems import MountPoint,FileSystemError
+from darwinist.diskutil import DiskInfo,DiskUtilError
 
 re_mountpoint = re.compile(r'([^\s]*) on (.*) \(([^\)]*)\)$')
 re_df = re.compile(r'^([^\s]+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)%\s+(.*)$')
@@ -19,7 +20,6 @@ class MountPoints(dict):
         dict.__init__(self)
         self.update()
 
-    #noinspection PyMethodOverriding
     def update(self):
         """
         Update mount points from /sbin/mount output
@@ -66,8 +66,39 @@ class OSXMountPoint(MountPoint):
             self.hfspath = Alias(self.mountpoint).hfspath
         except ValueError:  
             self.hfspath = None
+        self.update_diskinfo()
+
+    def update_diskinfo(self):
+        if os.access(self.device,os.R_OK):
+            self.diskinfo = DiskInfo(self.device)
+        else:
+            self.diskinfo = {} 
 
     def __getattr__(self,attr):
+        if attr == 'name':
+            if self.diskinfo.has_key('VolumeName'):
+                return self.diskinfo['VolumeName']
+            # No return: fallback to name parsed from mountpoint
+        if attr in ['writable']:
+            if self.diskinfo.has_key('Writable'):
+                return self.diskinfo['Writable']
+            return False
+        if attr in ['bootable']:
+            if self.diskinfo.has_key('Bootable'):
+                return self.diskinfo['Bootable']
+            return False
+        if attr in ['internal']:
+            if self.diskinfo.has_key('Internal'):
+                return self.diskinfo['Internal']
+            return True
+        if attr in ['ejectable','removable']:
+            if self.diskinfo.has_key('Ejectable'):
+                return self.diskinfo['Ejectable']
+            return False
+        if attr in ['bs','blocksize']:
+            if self.diskinfo.has_key('DeviceBlockSize'):
+                return int(self.diskinfo['DeviceBlockSize'])
+            return 0 
         return MountPoint.__getattr__(self,attr)
 
     def checkusage(self):
@@ -94,3 +125,4 @@ class OSXMountPoint(MountPoint):
             'size': long(size),'used': long(used), 
             'free': long(free),'percent': int(percent)
         }
+
