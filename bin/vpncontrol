@@ -13,8 +13,8 @@ the passwords as well.
 
 import os,time
 
-#noinspection PyPackageRequirements
 from systematic.shell import Script
+from darwinist.process import ProcessList
 from darwinist.networkprofile import NetworkProfileList
 
 CONFIG_PATH = os.path.join(os.getenv('HOME'),'.networks.conf')
@@ -29,10 +29,28 @@ script.add_option('-w','--wait',action='store_true',help='Wait for connect/disco
 script.add_option('-l','--list',action='store_true',help='List connections')
 (opts,args) = script.parse_args()
 
+def wait_connection(connection,process=None):
+    """
+    Function to wait startup of vpn connection, or VPN process quitting.
+    Doesn't make sense for other connection types.
+    """
+    pl = ProcessList()
+    time.sleep(1)
+    while True:
+        if process is not None:
+            pl.update()
+            if not pl.filter_command(process):
+                script.exit(1,'Process not found: %s' % process)
+        if n.connected:
+            break
+        time.sleep(1)
+
 if script.name == 'btcontrol':
     linktype = 'dialup'
+    process_name = None
 elif script.name == 'vpncontrol':
     linktype = 'vpn'
+    process = 'racoon'
 else:
     linktype = None
     script.exit(1,'Unknown called name: %s' % script.name)
@@ -78,10 +96,7 @@ if args[0] in ['start','connect']:
     n.connect()
     if opts.wait:
         script.log.info('Waiting for %s to connect...' % n.name)
-        while True:
-            if n.connected: 
-                break
-            time.sleep(1)
+        wait_connection(n,process)
 
 elif args[0] in ['stop','disconnect']:
     if not n.connected:
@@ -93,10 +108,6 @@ elif args[0] in ['stop','disconnect']:
             if not n.connected: 
                 break
             time.sleep(1)
-    while True:
-        if not n.connected: 
-            break
-        time.sleep(1)
 
 elif args[0] in ['status']:
     status = n.connected
@@ -106,10 +117,7 @@ elif args[0] in ['status']:
     script.exit(status==False and 1 or 0)
 
 elif args[0] in ['wait']:
-    while True:
-        if n.connected: 
-            break
-        time.sleep(1)
+    wait_connection(connection,None)
 
 else:
     script.exit(1,script.get_usage())

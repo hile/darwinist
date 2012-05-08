@@ -3,12 +3,8 @@
 Control and see status of OS/X network interfaces from python. 
 """
 
-import os
-#noinspection PyPackageRequirements
+import os,logging,appscript
 from configobj import ConfigObj
-
-#noinspection PyPackageRequirements
-import logging,appscript
 
 NETWORK_CONNECTION_TYPES = {
     'wlan':         2,
