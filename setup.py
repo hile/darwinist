@@ -8,7 +8,7 @@ This module is split from darwinist module to platform dependent tool
 import sys,os,glob
 from setuptools import setup
 
-VERSION='2.0.0'
+VERSION='2.0.1'
 README = open(os.path.join(os.path.dirname(__file__),'README.txt'),'r').read()
 
 setup(
