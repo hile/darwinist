@@ -7,6 +7,21 @@ from xml.parsers.expat import ExpatError
 
 from subprocess import Popen,PIPE
 
+INFO_FIELD_MAP = {
+    'DeviceNode':       {'name': 'Device', 'value': lambda x: str(x)},
+    'FilesystemName':   {'name': 'Filesystem', 'value': lambda x: str(x)},
+    'UsedSpace':        {'name': 'Used', 'value': lambda x: x/1024},
+    'UsedPercent':      {'name': 'Percent', 'value': lambda x: x/1024},
+    'FreeSpace':        {'name': 'Free', 'value': lambda x: x/1024},
+    'TotalSize':        {'name': 'Sizd', 'value': lambda x: x/1024},
+    'VolumeName':       {'name': 'Volume Name', 'value': lambda x: str(x)},
+    'VolumeUUID':       {'name': 'UUID','value': lambda x: str(x)},
+}
+INFO_FIELD_ORDER = [
+    'DeviceNode','VolumeName','FilesystemName','VolumeUUID',
+    'UsedSpace', 'FreeSpace', 'TotalSize'
+]
+
 class DiskUtilError(Exception):
     def __str__(self):
         return self.args[0]
@@ -24,6 +39,11 @@ class DiskInfo(dict):
             self.update(plistlib.readPlist(plist))
         except ExpatError,emsg:
             raise DiskUtilError('Error parsing plist: %s' % stdout)
+        if self.has_key('TotalSize') and self.has_key('FreeSpace'):
+            self['UsedSpace'] = self['TotalSize'] - self['FreeSpace']
+            self['UsedPercent'] = int(round(
+                1-(float(self['FreeSpace'])/float(self['TotalSize']))
+            ))
 
     def keys(self):
         """
