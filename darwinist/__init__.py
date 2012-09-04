@@ -4,7 +4,7 @@ OS/X specific modules for systematic
 
 __all__ = [
     'afpshare', 'airport', 'application', 'corestorage',
-    'filesystems','homebrew','networkprofile',
-    'networksetup','process','systemevents'
+    'filesystems','homebrew','networkprofile','networksetup',
+    'notification','process','systemevents'
 ]
 

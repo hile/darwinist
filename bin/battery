@@ -1,0 +1,18 @@
+#!/usr/bin/env python
+"""
+Trivial wrapper to return OS/X laptop battery status
+"""
+
+from systematic.shell import Script
+from darwinist.battery import Batteries
+
+script = Script()
+(opts,args) = script.parse_args()
+
+batteries = Batteries()
+for battery in batteries:
+    print battery
+    if opts.verbose:
+        for k,v in battery.items():
+            print '%26s %s' % (k,v)
+

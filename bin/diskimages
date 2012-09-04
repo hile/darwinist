@@ -1,0 +1,62 @@
+#!/usr/bin/env python
+"""
+Attach and detach user configured disk images based on settings, to
+predefined folders with custom parameters.
+"""
+
+from systematic.shell import Script
+from darwinist.diskimage import DiskImagesConfig,DiskImage,DiskImageError
+from darwinist.diskutil  import INFO_FIELD_MAP, INFO_FIELD_ORDER
+
+script = Script()
+script.add_option('-n','--names',action='store_true',help='List image names')
+script.add_option('-l','--list',action='store_true',help='List images')
+script.add_option('-i','--info',action='store_true',help='Show image info')
+script.add_option('-m','--attach',action='store_true',help='Attach images')
+script.add_option('-u','--detach',action='store_true',help='detach images')
+(opts,args) = script.parse_args()
+
+dmgs = DiskImagesConfig()
+for name in args:
+    if name not in dmgs.keys():
+       script.exit(1,'Invalid dmg name: %s' % name) 
+
+for name,dmg in dmgs.items():
+    if args and name not in args:
+        continue
+    if opts.detach:
+        script.log.debug('Detaching: %s' % dmg.mountpoint)
+        try:
+            dmg.detach()
+        except DiskImageError,emsg:
+            print emsg
+    elif opts.attach:
+        print 'Attaching: %s' % dmg.image
+        try:
+            dmg.attach()
+        except DiskImageError,emsg:
+            print emsg
+    elif opts.info:
+        info = dmg.info
+        print name
+        if dmg.description:
+            print '%14s %s' % ('Description',dmg.description)
+        if info is None:
+            print 'Image not mounted'
+        for k in INFO_FIELD_ORDER:
+            if k not in info.keys():
+                continue
+            print '%14s %s' % (
+                INFO_FIELD_MAP[k]['name'],
+                INFO_FIELD_MAP[k]['value'](info[k]),
+            )
+    elif opts.list:
+        print '%s: %s on %s: %s' % (
+            name,dmg.image,dmg.mountpoint,
+            dmg.connected and 'attached' or 'not attached'
+        )
+    elif opts.names:
+        print name 
+    else:
+        script.exit(1,script.get_usage())
+

@@ -1,0 +1,50 @@
+#!/usr/bin/env python
+"""
+Open and wait for VPN connection, open given SSH connection 
+"""
+
+import sys,os,time
+
+from systematic.shell import Script
+from darwinist.process import ProcessList
+from darwinist.networkprofile import NetworkProfileList
+
+CONFIG_PATH = os.path.join(os.getenv('HOME'),'.networks.conf')
+
+script = Script()
+script.set_usage("""%s -n <vpn-name> <ssh-command>
+
+Connect to vpn and run given SSH command.""" % script.name
+)
+
+def wait_connection(connection,process=None):
+    """
+    Function to wait startup of vpn connection, or VPN process quitting.
+    Doesn't make sense for other connection types.
+    """
+    pl = ProcessList()
+    time.sleep(1)
+    while True:
+        if process is not None:
+            pl.update()
+            if not pl.filter_command(process):
+                script.exit(1,'Process not found: %s' % process)
+        if n.connected:
+            break
+        time.sleep(1)
+
+linktype = 'vpn'
+process = 'racoon'
+
+if len(sys.argv[1:]) == 0:
+    script.exit(1,script.get_usage())
+
+npl = NetworkProfileList(config=CONFIG_PATH)
+n = npl.filter(linktype)[0]
+if not n.connected:
+    n.connect()
+    script.log.info('Waiting for %s to connect...' % n.name)
+    wait_connection(n,process)
+
+script.execute(['ssh'] + sys.argv[1:])
+
