@@ -7,12 +7,13 @@ from systematic.shell import Script
 from darwinist.battery import Batteries
 
 script = Script()
-(opts,args) = script.parse_args()
+script.add_argument('-v','--verbose',action='store_true',help="Show details")
+args = script.parse_args()
 
 batteries = Batteries()
 for battery in batteries:
     print battery
-    if opts.verbose:
+    if args.verbose:
         for k,v in battery.items():
             print '%26s %s' % (k,v)
 

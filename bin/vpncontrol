@@ -14,53 +14,33 @@ the passwords as well.
 import os,time
 
 from systematic.shell import Script
-from darwinist.process import ProcessList
 from darwinist.networkprofile import NetworkProfileList
 
 CONFIG_PATH = os.path.join(os.getenv('HOME'),'.networks.conf')
 
 script = Script()
-script.set_usage("""%s <start|stop|status>
-
-Connect, disconnect or show status of on-demand network connection.""" % script.name
-)
-script.add_option('-n','--name',help='Connection name')
-script.add_option('-w','--wait',action='store_true',help='Wait for connect/disconnect')
-script.add_option('-l','--list',action='store_true',help='List connections')
-(opts,args) = script.parse_args()
-
-def wait_connection(connection,process=None):
-    """
-    Function to wait startup of vpn connection, or VPN process quitting.
-    Doesn't make sense for other connection types.
-    """
-    pl = ProcessList()
-    time.sleep(1)
-    while True:
-        if process is not None:
-            pl.update()
-            if not pl.filter_command(process):
-                script.exit(1,'Process not found: %s' % process)
-        if n.connected:
-            break
-        time.sleep(1)
+script.add_argument('-n','--name',help='Connection name')
+script.add_argument('-w','--wait',action='store_true',help='Wait for connect/disconnect')
+script.add_argument('-l','--list',action='store_true',help='List connections')
+script.add_argument('mode',nargs='*',help='Operation to execute')
+args = script.parse_args()
 
 if script.name == 'btcontrol':
     linktype = 'dialup'
-    process_name = None
 elif script.name == 'vpncontrol':
     linktype = 'vpn'
-    process = 'racoon'
 else:
     linktype = None
     script.exit(1,'Unknown called name: %s' % script.name)
 
-if not opts.list and len(args) == 0:
-    script.exit(1,script.get_usage())
+mode = len(args.mode)>0 and args.mode[0] or None
+
+if not args.list and mode is None:
+    script.usage_error('No mode selected')
 
 npl = NetworkProfileList(config=CONFIG_PATH)
 links = npl.filter(linktype)
-if opts.list:
+if args.list:
     if not len(links):
         script.exit(1,'No %s connections defined' % linktype)
     for l in links:
@@ -69,13 +49,13 @@ if opts.list:
 
 n = None
 try:
-    if opts.name is not None:
+    if args.name is not None:
         try:
-            n = npl[opts.name]
+            n = npl[args.name]
             if n not in links:
-                raise ValueError('Not a %s link: %s' % (linktype,opts.name))
+                raise ValueError('Not a %s link: %s' % (linktype,args.name))
         except KeyError:
-            raise ValueError('No such %s link: %s' % (linktype,opts.name))
+            raise ValueError('No such %s link: %s' % (linktype,args.name))
     else:
         if npl.config.has_key(linktype):
             default = npl.config[linktype]['default']
@@ -90,34 +70,44 @@ try:
 except ValueError,emsg:
     script.exit(1,emsg)
 
-if args[0] in ['start','connect']:
+if mode in ['start','connect']:
     if n.connected:
         script.exit(message='Already connected.')
     n.connect()
-    if opts.wait:
+    if args.wait:
         script.log.info('Waiting for %s to connect...' % n.name)
-        wait_connection(n,process)
-
-elif args[0] in ['stop','disconnect']:
-    if not n.connected:
-        script.exit(message='Not connected.')
-    n.disconnect()
-    if opts.wait:
-        script.log.info('Waiting for %s to disconnect...' % n.name)
         while True:
-            if not n.connected: 
+            if n.connected:
                 break
             time.sleep(1)
 
-elif args[0] in ['status']:
+elif mode in ['stop','disconnect']:
+    if not n.connected:
+        script.exit(message='Not connected.')
+    n.disconnect()
+    if args.wait:
+        script.log.info('Waiting for %s to disconnect...' % n.name)
+        while True:
+            if not n.connected:
+                break
+            time.sleep(1)
+    while True:
+        if not n.connected:
+            break
+        time.sleep(1)
+
+elif mode in ['status']:
     status = n.connected
     print '%s %s %s' % (
         n.name,linktype,status and 'is connected' or 'is not connected'
     )
     script.exit(status==False and 1 or 0)
 
-elif args[0] in ['wait']:
-    wait_connection(connection,None)
+elif mode in ['wait']:
+    while True:
+        if n.connected:
+            break
+        time.sleep(1)
 
 else:
     script.exit(1,script.get_usage())
