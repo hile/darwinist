@@ -8,8 +8,8 @@ This module is split from darwinist module to platform dependent tool
 import sys,os,glob
 from setuptools import setup
 
-VERSION='2.0.1'
-README = open(os.path.join(os.path.dirname(__file__),'README.txt'),'r').read()
+VERSION='3.0.0'
+README = open(os.path.join(os.path.dirname(__file__),'README.md'),'r').read()
 
 setup(
     name = 'darwinist',
@@ -24,6 +24,6 @@ setup(
     zip_safe = False,
     packages = ['darwinist'],
     scripts = glob.glob('bin/*'),
-    install_requires = [ 'systematic>=2.0.0', 'appscript', 'pyfsevents' ],
+    install_requires = [ 'systematic>=3.0.0', 'appscript', 'pyfsevents' ],
 )   
 
