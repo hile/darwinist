@@ -7,6 +7,8 @@ import os,re
 from configobj import ConfigObj
 from subprocess import call,CalledProcessError
 
+from systematic.log import Logger,LoggerError
+
 re_mountpoint = re.compile(r'^/Volumes/[A-Za-z0-9_-]*$')
 
 DEFAULT_CONFIG_PATH = os.path.join(os.getenv('HOME'),'.afpshares.conf')
@@ -23,6 +25,7 @@ class AFPShareConfig(dict):
     Reader for AFP share configuration files.
     """
     def __init__(self,config_path=DEFAULT_CONFIG_PATH):
+        self.log = Logger('afpshare').default_stream
         dict.__init__(self)
         self.config = None
         self.path = config_path
@@ -46,7 +49,7 @@ class AFPShareConfig(dict):
                 continue
 
     def __getattr__(self,attr):
-        if attr == 'disks': 
+        if attr == 'disks':
             return self.values()
         try:
             return self.options[attr]
@@ -66,13 +69,14 @@ class AFPShareDisk(dict):
     AFP network share disk specification
     """
     def __init__(self,name,settings):
+        self.log = Logger('afpshare').default_stream
         dict.__init__(self)
         self.name = name
         self.update(**{
-            'address': None, 
-            'path':None, 
+            'address': None,
+            'path':None,
             'mountpoint':None,
-            'username': None, 
+            'username': None,
             'password': None,
         })
 
@@ -80,7 +84,7 @@ class AFPShareDisk(dict):
             if not self.has_key(k):
                 raise AFPShareError('Unsupported disk option: %s' % k)
             self[k] = v
-        for k in ['address','path','mountpoint']: 
+        for k in ['address','path','mountpoint']:
             if self[k] is None:
                 raise AFPShareError('Missing required option %s' % k)
 

@@ -5,6 +5,8 @@ OS/X implementation of the systematic VLAN management API
 
 from subprocess import Popen,PIPE
 
+from systematic.log import Logger,LoggerError
+
 NO_VLANS_MESSAGE = 'There are no VLANs currently configured on this system.'
 
 VLANLIST_LINE_MAP = {
@@ -20,12 +22,14 @@ class VLANError(Exception):
 
 class VLAN(object):
     def __init__(self):
+        self.log = Logger('vlan').default_stream
+
         for k in VLANLIST_LINE_MAP.keys():
             setattr(self,k,'NOT SET')
 
     def __repr__(self):
         return '%s TAG %s PARENT %s' % (self.port,self.tag,self.parent)
-    
+
     def create(self,name,parent,tag):
         cmd = ['networksetup','-createVLAN', name, parent, str(tag)]
         p = Popen(cmd,stdin=PIPE,stdout=PIPE,stderr=PIPE)
@@ -47,6 +51,8 @@ class VLAN(object):
 
 class VLANList(list):
     def __init__(self):
+        self.log = Logger('vlan').default_stream
+
         cmd = ['networksetup','-listVLANs']
         p = Popen(cmd,stdin=PIPE,stdout=PIPE,stderr=PIPE)
         (stdout,stderr) = p.communicate()
@@ -65,22 +71,3 @@ class VLANList(list):
                     if entry is None:
                         entry = VLAN()
                     setattr(entry,k,l[len(v):].lstrip())
-
-if __name__ == '__main__':
-    vl = VLANList()
-    for i in range(10,20):
-        v = VLAN()
-        try:
-            v.create('vlan%d'%i,'en0',i)
-            vl.append(v)
-        except VLANError,emsg:
-            print emsg
-    for vlan in vl:
-        print vlan
-
-    for vlan in vl:
-        try:
-            vlan.remove()
-        except VLANError,emsg:
-            print emsg
-

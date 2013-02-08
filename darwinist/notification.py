@@ -6,10 +6,15 @@ Send notifications to OS/X Mountain Lion notification center
 import Foundation,AppKit,objc,time
 from PyObjCTools import AppHelper
 
+from systematic.log import Logger,LoggerError
+
 class NotificationClient(Foundation.NSObject):
+    def __init__(self,*args,**kwargs):
+        Foundation.NSObject.__init__(self,*args,**kwargs)
+        self.log = Logger('notification').default_stream
 
     def notify(self,title,subtitle,text,url=None):
-        ncenter = objc.lookUpClass('NSUserNotificationCenter') 
+        ncenter = objc.lookUpClass('NSUserNotificationCenter')
         nclass = objc.lookUpClass('NSUserNotification')
         user_notifications = ncenter.defaultUserNotificationCenter()
         user_notifications.setDelegate_(self)
@@ -22,7 +27,7 @@ class NotificationClient(Foundation.NSObject):
         notification.setOtherButtonTitle_("View")
         if url is not None:
             notification.setUserInfo_({"action":"open_url", "value":url})
-        user_notifications.scheduleNotification_(notification)        
+        user_notifications.scheduleNotification_(notification)
 
     def userNotificationCenter_didActivateNotification_(self,center,notification):
         userInfo = notification.userInfo()

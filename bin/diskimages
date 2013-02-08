@@ -32,32 +32,32 @@ for name,dmg in dmgs.items():
         except DiskImageError,emsg:
             print emsg
     elif args.attach:
-        print 'Attaching: %s' % dmg.image
+        script.message('Attaching: %s' % dmg.image)
         try:
             dmg.attach()
         except DiskImageError,emsg:
-            print emsg
+            script.error(emsg)
     elif args.info:
         info = dmg.info
-        print name
+        script.message(name)
         if dmg.description:
-            print '%14s %s' % ('Description',dmg.description)
+            script.message('%14s %s' % ('Description',dmg.description))
         if info is None:
-            print 'Image not mounted'
+            script.message('Image not mounted')
         for k in INFO_FIELD_ORDER:
             if k not in info.keys():
                 continue
-            print '%14s %s' % (
+            script.message('%14s %s' % (
                 INFO_FIELD_MAP[k]['name'],
                 INFO_FIELD_MAP[k]['value'](info[k]),
-            )
+            ))
     elif args.list:
-        print '%s: %s on %s: %s' % (
+        script.message('%s: %s on %s: %s' % (
             name,dmg.image,dmg.mountpoint,
             dmg.connected and 'attached' or 'not attached'
-        )
+        ))
     elif args.names:
-        print name
+        script.message(name)
     else:
         script.usage_error('No operation selected')
 

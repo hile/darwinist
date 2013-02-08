@@ -4,6 +4,7 @@ Wrapper to get OS/X darwin laptop battery status from command line
 """
 
 from darwinist.ioreg import IORegTree,IORegError
+from systematic.log import Logger,LoggerError
 
 BATTERY_IGNORE_FIELDS = [
     'CellVoltage', 'IOGeneralInterest',
@@ -11,10 +12,10 @@ BATTERY_IGNORE_FIELDS = [
 ]
 
 BATTERY_FIELD_FORMATS = {
-    'AdapterInfo': lambda x: int(x), 
-    'Amperage': lambda x: int(x), 
-    'AvgTimeToEmpty': lambda x: int(x), 
-    'AvgTimeToFull': lambda x: int(x), 
+    'AdapterInfo': lambda x: int(x),
+    'Amperage': lambda x: int(x),
+    'AvgTimeToEmpty': lambda x: int(x),
+    'AvgTimeToFull': lambda x: int(x),
     'BatteryInstalled': lambda x: x=='Yes' and True or False,
     'BatteryInvalidWakeSeconds': lambda x: int(x),
     'BatterySerialNumber': lambda x: str(x).strip('" '),
@@ -26,14 +27,14 @@ BATTERY_FIELD_FORMATS = {
     'ExternalConnected': lambda x: x=='Yes' and True or False,
     'FirmwareSerialNumber': lambda x: int(x),
     'FullyCharged': lambda x: x=='Yes' and True or False,
-    'InstantAmperage': lambda x: int(x), 
-    'InstantTimeToEmpty': lambda x: int(x), 
+    'InstantAmperage': lambda x: int(x),
+    'InstantTimeToEmpty': lambda x: int(x),
     'IsCharging': lambda x: x=='Yes' and True or False,
-    'Location': lambda x: int(x), 
+    'Location': lambda x: int(x),
     'Manufacturer': lambda x: str(x).strip('" '),
     'MaxCapacity': lambda x: int(x),
     'MaxErr': lambda x: int(x),
-    'PermanentFailureStatus': lambda x: int(x), 
+    'PermanentFailureStatus': lambda x: int(x),
     'PostChargeWaitSeconds': lambda x: int(x),
     'PostDischargeWaitSeconds': lambda x: int(x),
     'Temperature': lambda x: float(x)/100,
@@ -53,18 +54,20 @@ class Batteries(list):
 
 class Battery(dict):
     def __init__(self,details={}):
-        dict.__init__(self)
+        self.log = Logger('battery').default_stream
+
         for k,v in details.items():
-            if k in BATTERY_IGNORE_FIELDS: 
+            if k in BATTERY_IGNORE_FIELDS:
                 continue
             if k in BATTERY_FIELD_FORMATS.keys():
                 self[k.lower()] = BATTERY_FIELD_FORMATS[k](v.value)
             else:
                 self[k.lower()] = v.value
+
         if self.has_key('currentcapacity') and self.has_key('maxcapacity'):
             self['percent'] = int(
                 round(float(self.currentcapacity)/self.maxcapacity*100)
-            ) 
+            )
         else:
             self['percent'] = 'UNKNOWN'
 
@@ -98,10 +101,3 @@ class Battery(dict):
             self.maxcapacity,
             self.cyclecount,
         )
-        
-if __name__ == '__main__':
-    bt = Batteries()
-    for  b in bt:
-        print b
-        for k,v in b.items():
-            print '%30s %8s %s' % (k,type(v),v)

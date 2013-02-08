@@ -5,8 +5,7 @@ Wrapper to call the networksetup command line script.
 
 import os,re
 from subprocess import check_output,CalledProcessError
-
-#noinspection PyPackageRequirements
+from systematic.log import Logger,LoggerError
 from seine.address import IPv4Address,EthernetMACAddress
 
 CMD = '/usr/sbin/networksetup'
@@ -27,6 +26,8 @@ class NetworkSetup(object):
     Wrapper for OS/X 'networksetup' command line tool
     """
     def __init__(self):
+        self.log = Logger('networksetup').default_stream
+
         if not os.path.isfile(CMD):
             raise NetworkSetupError('No such file: %s' % CMD)
         if not os.access(CMD,os.X_OK):
@@ -47,11 +48,12 @@ class NetworkService(object):
     One specific network service parsed from 'networksetup' output
     """
     def __init__(self,name):
+        self.log = Logger('networksetup').default_stream
         self.name = name
 
     def __getattr__(self,attr):
         if attr == 'configuration':
-            return self.__parse_info() 
+            return self.__parse_info()
         if attr == 'mac_address':
             return self.__parse_mac_address()
         raise AttributeError('No such NetworkService attribute: %s' % attr)
@@ -73,8 +75,8 @@ class NetworkService(object):
         for l in out:
             if l == 'Manual Configuration':
                 details['ipv4_mode'] = 'manual'
-                continue 
-            if l == 'DHCP Configuration':   
+                continue
+            if l == 'DHCP Configuration':
                 details['ipv4_mode'] = 'dhcp'
                 continue
             try:

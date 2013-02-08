@@ -6,6 +6,7 @@ import os,plistlib,StringIO
 from xml.parsers.expat import ExpatError
 
 from subprocess import Popen,PIPE
+from systematic.log import Logger,LoggerError
 
 INFO_FIELD_MAP = {
     'DeviceNode':       {'name': 'Device', 'value': lambda x: str(x)},
@@ -28,6 +29,7 @@ class DiskUtilError(Exception):
 
 class DiskInfo(dict):
     def __init__(self,device):
+        self.log = Logger('diskutil').default_stream
         if not os.access(device,os.R_OK):
             raise DiskUtilError('Device not readable: %s' % device)
 
@@ -62,10 +64,3 @@ class DiskInfo(dict):
         Return values sorted by key
         """
         return [self[k] for k in self.keys()]
-
-if __name__ == '__main__':
-    import sys
-    for dev in sys.argv[1:]:
-        for k,v in DiskInfo(dev).items():
-            print '%-32s %s' % (k,v)
-            

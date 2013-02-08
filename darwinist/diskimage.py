@@ -7,9 +7,11 @@ import os,sys
 from subprocess import Popen,PIPE
 from configobj import ConfigObj,Section
 
+from systematic.shell import CONFIG_PATH
+from systematic.log import Logger,LoggerError
 from darwinist.diskutil import DiskInfo,DiskUtilError
 
-DEFAULT_CONFIG_PATH = os.path.expanduser('~/.diskimages.conf')
+DEFAULT_CONFIG_PATH = os.path.join(CONFIG_PATH,'diskimages.conf')
 DEFAULT_VOLUMES = '/Volumes/'
 VALID_CONFIG_ARGS = [ 'description', 'image', 'mountpoint', 'args' ]
 
@@ -19,7 +21,8 @@ class DiskImageError(Exception):
 
 class DiskImagesConfig(dict):
     def __init__(self,path=DEFAULT_CONFIG_PATH):
-        self.path = path 
+        self.log = Logger('diskimage').default_stream
+        self.path = path
         if os.path.isfile(path):
             self.read()
 
@@ -45,6 +48,7 @@ class DiskImagesConfig(dict):
 
 class DiskImage(object):
     def __init__(self,config,image,mountpoint,args,description=None):
+        self.log = Logger('diskimage').default_stream
         self.config = config
         self.image = image
         self.mountpoint = mountpoint
@@ -80,15 +84,17 @@ class DiskImage(object):
         if not self.connected:
             raise DiskImageError('Not attached: %s' % self.mountpoint)
         cmd = ['hdiutil','detach',self.mountpoint]
+        self.log.debug(' '.join(cmd))
         p = Popen(cmd,stdin=sys.stdin,stdout=sys.stdout,stderr=sys.stderr)
         p.wait()
         if p.returncode!=0:
             raise DiskImageError('Error detaching %s' % self.mountpoint)
-        
+
     def attach(self):
         if self.connected:
             raise DiskImageError('Already attached: %s' % self.mountpoint)
         cmd = ['hdiutil','attach']+self.args+[self.image]
+        self.log.debug(' '.join(cmd))
         p = Popen(cmd,stdin=sys.stdin,stdout=sys.stdout,stderr=sys.stderr)
         p.wait()
         if p.returncode!=0:

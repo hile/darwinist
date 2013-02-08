@@ -2,8 +2,10 @@
 """
 Abstraction of AppleScript system events class for python
 """
-#noinspection PyPackageRequirements,PyPackageRequirements,PyPackageRequirements
+
 import appscript
+
+from systematic.log import Logger,LoggerError
 
 FOLDER_NAME_MAP = {
     'applications': 'applications_folder',
@@ -42,13 +44,13 @@ class OSXUserAccounts(dict):
     List of user accounts from appscript system events
     """
     def __init__(self):
-        dict.__init__(self)
+        self.log = Logger('systemevents').default_stream
+
         try:
             self.app = appscript.app('System Events')
         except appscript.reference.CommandError,e:
-            raise SystemEventsError(
-                'Appscript initialization error: %s' % e.errormessage
-            )
+            raise SystemEventsError('Appscript initialization error: %s' % e.errormessage)
+
         for ref in self.app.users.get():
             u = OSXUserAccount(self,ref)
             self[u.name] = u
@@ -58,7 +60,7 @@ class OSXUserAccount(dict):
     One user account parsed from appscript system events API
     """
     def __init__(self,app,reference):
-        dict.__init__(self)
+        self.log = Logger('systemevents').default_stream
         self.app = app
         self.reference = reference
 
@@ -96,29 +98,28 @@ class OSXUserFolders(dict):
     List of OS/X user folders from system events API
     """
     def __init__(self):
-        dict.__init__(self)
+        self.log = Logger('systemevents').default_stream
+
         try:
             self.app = appscript.app('System Events')
         except appscript.reference.CommandError,e:
-            raise SystemEventsError(
-                'Appscript initialization error: %s' % e.errormessage
-            )
+            raise SystemEventsError('Appscript initialization error: %s' % e.errormessage)
+
         for k in sorted(FOLDER_NAME_MAP.keys()):
             ref = getattr(self.app,FOLDER_NAME_MAP[k]).get()
             if ref is None:
                 self[k] = None
                 continue
             self[k] = OSXFolderItem(self,ref)
-            print self[k]
 
 class OSXFolderItem(dict):
     """
     One OS/X folder item from system events
     """
     def __init__(self,app,reference):
-        dict.__init__(self)
+        self.log = Logger('systemevents').default_stream
         if reference is None:
-            raise 
+            raise
         self.app = app
         self.reference = reference
 

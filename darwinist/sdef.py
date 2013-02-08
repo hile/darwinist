@@ -1,19 +1,21 @@
 #!/usr/bin/env python
 """
-Module to create application dictionaries for appscript using command
-line sdef tool
+Module to create application dictionaries for appscript using command line sdef tool
 """
 
 import os
 from subprocess import check_output
 from lxml import etree as ET
 
+from systematic.log import Logger,LoggerError
+
 class SDEFError(Exception):
     def __str__(self):
         return self.args[0]
 
-class SDEF(object): 
+class SDEF(object):
     def __init__(self,path):
+        self.log = Logger('sdef').default_stream
         self.path = path
 
         if not os.path.isdir(path):
@@ -61,12 +63,6 @@ class SDEF(object):
         output += '\nclasses = %s' % classes
         output += '\nenums = %s' % enums
         output += '\nproperties = %s' % properties
-        output += '\nelements = %s' % elements 
-        output += '\ncommands = %s' % commands 
-        return output 
-
-if __name__ == '__main__':
-    import sys
-    sdef = SDEF(sys.argv[1])
-    print sdef.terms
-
+        output += '\nelements = %s' % elements
+        output += '\ncommands = %s' % commands
+        return output

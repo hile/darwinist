@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 """
-coreStorage status classes: just a wrapper to parse output from the 
-command line commands to dictionaries, grouping the hierarchy for 
+coreStorage status classes: just a wrapper to parse output from the
+command line commands to dictionaries, grouping the hierarchy for
 easy consumption.
 """
 
 import re
 from subprocess import check_output,CalledProcessError
+
+from systematic.log import Logger,LoggerError
 
 re_header = re.compile('^CoreStorage logical volume groups \((\d+) found\)$')
 re_lvg_header = re.compile('^Logical Volume Group ([A-Z0-9-]+)$')
@@ -56,7 +58,7 @@ class coreStorage(list):
     Class for OS/X corestorage LVM implementation status parsing
     """
     def __init__(self):
-        list.__init__(self)
+        self.log = Logger('corestorage').default_stream
         self.lvg_count = 0
         self.update()
 
@@ -128,7 +130,7 @@ class coreStorageLVG(dict):
     Class to represent one corestorage LVG (logical volume group)
     """
     def __init__(self,uuid):
-        dict.__init__(self)
+        self.log = Logger('corestorage').default_stream
         self.uuid = uuid
         self.pvs = []
         self.lvfs = []
@@ -151,7 +153,7 @@ class coreStoragePV(dict):
     Class to represent one corestorage PV (physical volume)
     """
     def __init__(self,lvg,uuid):
-        dict.__init__(self)
+        self.log = Logger('corestorage').default_stream
         self.lvg = lvg
         self.uuid = uuid
 
@@ -173,7 +175,7 @@ class coreStorageLVFamily(dict):
     Core storage LV (Logical Volume) family
     """
     def __init__(self,lvg,uuid):
-        dict.__init__(self)
+        self.log = Logger('corestorage').default_stream
         self.lvg = lvg
         self.uuid = uuid
         self.lvs = []
@@ -196,7 +198,7 @@ class coreStorageLV(dict):
     Core storage LV (logical volume)
     """
     def __init__(self,lvf,uuid):
-        dict.__init__(self)
+        self.log = Logger('corestorage').default_stream
         self.lvf = lvf
         self.uuid = uuid
 

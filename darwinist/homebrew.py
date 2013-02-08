@@ -34,6 +34,7 @@ for arg in sys.argv[1:]:
 import os,logging
 
 from subprocess import Popen,PIPE
+from systematic.log import Logger,LoggerError
 
 HOMEBREW_PREFIX = '/usr/local'
 HOMEBREW_FORMULAS = os.path.join(HOMEBREW_PREFIX,'Library','Formula')
@@ -51,7 +52,7 @@ class Homebrew(dict):
     Wrapper for homebrew packaging system's brew command
     """
     def __init__(self,brew=HOMEBREW_DEFAULT_COMMAND):
-        dict.__init__(self)
+        self.log = Logger('homebrew').default_stream
         self.log = logging.getLogger('modules')
         self.brew = brew
         self.update_installed()
@@ -159,7 +160,7 @@ class HomebrewPackage(object):
     Abstraction for one homebrew package, with multiple possible versions
     """
     def __init__(self,brew,name):
-        self.log = logging.getLogger('modules')
+        self.log = Logger('homebrew').default_stream
         self.brew = brew
         self.name = name
         self.cellar = os.path.join(HOMEBREW_PREFIX,'Cellar',name)

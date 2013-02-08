@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 """
-Control and see status of OS/X network interfaces from python. 
+Control and see status of OS/X network interfaces from python.
 """
 
 import os,logging,appscript
 from configobj import ConfigObj
+
+from systematic.log import Logger,LoggerError
 
 NETWORK_CONNECTION_TYPES = {
     'wlan':         2,
@@ -18,7 +20,7 @@ class NetworkConfigError(Exception):
     """
     Exceptions raised while parsing OS/X network profiles
     """
-    def __str__(self): 
+    def __str__(self):
         return self.args[0]
 
 class NetworkProfileList(object):
@@ -26,6 +28,8 @@ class NetworkProfileList(object):
     List of network profiles found on the OS/X system
     """
     def __init__(self,config=None):
+        self.log = Logger('networkprofile').default_stream
+
         self.config = self.__read_config(config)
         try:
             self.app = appscript.app('System Events')
@@ -36,7 +40,7 @@ class NetworkProfileList(object):
     def __read_config(self,config):
         if not os.path.isfile(config):
             return {}
-        return ConfigObj(config)        
+        return ConfigObj(config)
 
     def __getitem__(self,item):
         names = filter(
@@ -86,11 +90,11 @@ class NetworkProfileList(object):
                 raise NetworkConfigError(
                     'Unknown connection type: %s' % connection_type
                 )
-    
-        return [    
-            NetworkConnection(s.name.get(),self) 
+
+        return [
+            NetworkConnection(s.name.get(),self)
             for s in filter(lambda s:
-                s.kind.get()==connection_type, 
+                s.kind.get()==connection_type,
                 self.location.services.get()
             )
         ]
@@ -100,15 +104,14 @@ class NetworkConnection(object):
     Details and control of one OS/X network connection
     """
     def __init__(self,name,profiles=None):
+        self.log = Logger('networkprofile').default_stream
+
         if profiles is None:
             profiles = NetworkProfileList()
         self.name = name
         self.app = profiles.app
 
-        names = filter(lambda s: 
-            s.name.get()==name,
-            profiles.location.services.get()
-        )
+        names = filter(lambda s: s.name.get()==name, profiles.location.services.get())
         if not len(names):
             raise NetworkConfigError('No such connection: %s' % name)
         try:
@@ -174,7 +177,7 @@ class NetworkConnection(object):
             for k,v in NETWORK_CONNECTION_TYPES.items():
                 if v == kind:
                      return k
-            return 'unknown'    
+            return 'unknown'
 
         if item == 'connected':
             try:
@@ -185,14 +188,14 @@ class NetworkConnection(object):
 
     def connect(self):
         """
-        Connects the network interface. 
-        
-        If the interface is a VPN and it requires a password, you will still 
-        get graphical password request dialog. Patches welcome how to enter 
+        Connects the network interface.
+
+        If the interface is a VPN and it requires a password, you will still
+        get graphical password request dialog. Patches welcome how to enter
         the passphrase with appscript.
         """
         if self.connected:
-            raise NetworkConfigError('Already connected: %s' % self.name) 
+            raise NetworkConfigError('Already connected: %s' % self.name)
         logging.info('Connecting to network profile: %s' % self.name)
         self.app.connect(self.connection)
 
@@ -201,7 +204,7 @@ class NetworkConnection(object):
         Disconnect the network interface
         """
         if not self.connected:
-            raise NetworkConfigError('Not connected: %s' % self.name) 
+            raise NetworkConfigError('Not connected: %s' % self.name)
         logging.info('Disconnecting network profile: %s' % self.name)
         self.app.disconnect(self.connection)
 
