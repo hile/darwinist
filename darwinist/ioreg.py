@@ -2,10 +2,10 @@
 Module to parse output from 'ioreg' command to python data structures
 """
 
-import sys,os,re
-from subprocess import Popen,PIPE
-
-from systematic.log import Logger,LoggerError
+import sys
+import os
+import re
+from subprocess import Popen, PIPE
 
 IOREG_COMMAND = '/usr/sbin/ioreg'
 
@@ -22,29 +22,26 @@ class IORegItem(object):
     """
     One information item line from ioreg command output
     """
-    def __init__(self,line):
-        self.log = Logger('ioreg').default_stream
-
+    def __init__(self, line):
         try:
-            key,value = line.split('=',1)
+            key, value = line.split('=', 1)
         except ValueError:
             try:
-                key,value = line.split(':',1)
-            except ValueError,emsg:
+                key, value = line.split(':', 1)
+            except ValueError, emsg:
                 raise IORegError('Error splitting item line %s' % line)
 
         self.key = key.rstrip().strip('"')
         self.value = value.strip()
 
     def __repr__(self):
-        return '%s: %s' % (self.key,self.value)
+        return '%s: %s' % (self.key, self.value)
 
 class IORegGroup(dict):
     """
     A group of items in ioreg command output
     """
-    def __init__(self,parent,header):
-        self.log = Logger('ioreg').default_stream
+    def __init__(self, parent, header):
         self.parent = parent
         self.name = 'UNPARSED'
 
@@ -52,18 +49,18 @@ class IORegGroup(dict):
         if not m:
             raise IORegError('Error parsing header: %s' % header)
 
-        for k,v in m.groupdict().items():
-            setattr(self,k,v.strip())
+        for k, v in m.groupdict().items():
+            setattr(self, k, v.strip())
 
     def __repr__(self):
         return 'IORegGroup %s' % self.name
 
-    def append(self,line):
+    def append(self, line):
         """
         Add an IORegItem entry to this group
         """
         line = line.strip()
-        if line in ['"','']:
+        if line in ['"', '']:
             return
         item = IORegItem(line)
         self[item.key] = item
@@ -72,28 +69,26 @@ class IORegTree(list):
     """
     Parser for ioreg output entries to a dictionary
     """
-    def __init__(self,path=None):
-        self.log = Logger('ioreg').default_stream
-
-        if not os.access(IOREG_COMMAND,os.X_OK):
+    def __init__(self, path=None):
+        if not os.access(IOREG_COMMAND, os.X_OK):
             raise IORegError('Not executable: %s' % IOREG_COMMAND)
 
         if path is not None:
-            cmd = [IOREG_COMMAND,'-r','-w0','-n',path]
+            cmd = [IOREG_COMMAND, '-r', '-w0', '-n', path]
         else:
-            cmd = [IOREG_COMMAND,'-lw0']
+            cmd = [IOREG_COMMAND, '-lw0']
 
-        p = Popen(cmd,stdin=PIPE,stdout=PIPE,stderr=PIPE)
-        stdout,stderr = p.communicate()
+        p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
 
         parent = None
         group = None
         entries = []
         for l in [l.lstrip(' |').rstrip() for l in stdout.split('\n')]:
-            if l in ['','{']:
+            if l in ['', '{']:
                 continue
             elif l[:3] == '+-o':
-                group = IORegGroup(parent,l)
+                group = IORegGroup(parent, l)
                 parent = group
                 self.append(group)
 

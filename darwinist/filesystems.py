@@ -2,7 +2,8 @@
 """
 Abstraction of filesystem mount points for OS/X
 """
-import os,re
+import os
+import re
 from subprocess import check_output,CalledProcessError
 from mactypes import Alias
 

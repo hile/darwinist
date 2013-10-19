@@ -7,8 +7,8 @@ from systematic.shell import Script
 from darwinist.airport import AirportStatus
 
 script = Script()
-script.add_argument('-d','--details',action='store_true',help="Show AP details")
-script.add_argument('-s','--signal-strength',action='store_true',help="Show signal strength of nearby APs")
+script.add_argument('-d', '--details', action='store_true', help="Show AP details")
+script.add_argument('-s', '--signal-strength', action='store_true', help="Show signal strength of nearby APs")
 args = script.parse_args()
 
 status = AirportStatus()
@@ -21,7 +21,7 @@ if args.signal_strength:
 
 elif args.details:
     for k in sorted(status.keys()):
-        script.message('%20s %s' % (k,status[k]))
+        script.message('%20s %s' % (k, status[k]))
 
 else:
     script.message(status)

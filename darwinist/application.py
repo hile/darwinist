@@ -7,7 +7,6 @@ import os
 import plistlib
 
 from xml.parsers.expat import ExpatError
-from systematic.log import Logger,LoggerError
 
 INFO_BUNDLE_NAME_MAP = {
     'name':             'CFBundleName',
@@ -17,18 +16,13 @@ INFO_BUNDLE_NAME_MAP = {
 }
 
 class ApplicationError(Exception):
-    """
-    Exceptions raised while processing an OS/X application bundle
-    """
-    def __str__(self):
-        return self.args[0]
+    pass
 
 class Application(object):
     """
     Class to represent OS/X application bundles (.app)
     """
     def __init__(self,path):
-        self.log = Logger('application').default_stream
         self.path = path
         self.__cached_info = None
 
@@ -63,7 +57,6 @@ class ApplicationInfo(dict):
     Information for an application, as dictionary
     """
     def __init__(self,application):
-        self.log = Logger('application').default_stream
         self.path = os.path.join(application.path,'Contents','Info.plist')
 
         if not os.path.isfile(self.path):
@@ -73,8 +66,6 @@ class ApplicationInfo(dict):
             self.update(plistlib.readPlist(self.path).items())
         except ExpatError,emsg:
             raise ApplicationError('Error parsing %s: %s' % (self.path,emsg))
-
-        #self.log.debug('Loaded application info from %s' % self.path)
 
     def __repr__(self):
         return unicode('%s %s' % (self.name,self.version))
@@ -93,7 +84,6 @@ class ApplicationTree(list):
     Tree of OS/X applications (.app directory bundles)
     """
     def __init__(self,path='/Applications',max_depth=2):
-        self.log = Logger('application').default_stream
         self.path = path
         self.max_depth = max_depth
 
@@ -108,9 +98,7 @@ class ApplicationTree(list):
             """
             Load tree items from given path
             """
-            self.log.debug('Loading tree: %s' % path)
             if depth >= self.max_depth:
-                self.log.debug('Reached maximum length %s' % depth)
                 return []
 
             apps = []
@@ -126,7 +114,6 @@ class ApplicationTree(list):
             return apps
 
         if not os.path.isdir(self.path):
-            self.log.debug('No such directory: %s' % self.path)
             return
 
         list.__delslice__(self,0,len(self))

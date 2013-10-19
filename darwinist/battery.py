@@ -3,12 +3,13 @@
 Wrapper to get OS/X darwin laptop battery status from command line
 """
 
-from darwinist.ioreg import IORegTree,IORegError
-from systematic.log import Logger,LoggerError
+from darwinist.ioreg import IORegTree, IORegError
 
 BATTERY_IGNORE_FIELDS = [
-    'CellVoltage', 'IOGeneralInterest',
-    'LegacyBatteryInfo', 'ManufacturerData',
+    'CellVoltage',
+    'IOGeneralInterest',
+    'LegacyBatteryInfo',
+    'ManufacturerData',
 ]
 
 BATTERY_FIELD_FORMATS = {
@@ -53,10 +54,8 @@ class Batteries(list):
             self.append(Battery(ioreg_group))
 
 class Battery(dict):
-    def __init__(self,details={}):
-        self.log = Logger('battery').default_stream
-
-        for k,v in details.items():
+    def __init__(self, details={}):
+        for k, v in details.items():
             if k in BATTERY_IGNORE_FIELDS:
                 continue
             if k in BATTERY_FIELD_FORMATS.keys():
@@ -71,7 +70,7 @@ class Battery(dict):
         else:
             self['percent'] = 'UNKNOWN'
 
-    def __getattr__(self,attr):
+    def __getattr__(self, attr):
         try:
             return self[attr.lower()]
         except KeyError:
@@ -81,7 +80,7 @@ class Battery(dict):
         return sorted(dict.keys(self))
 
     def items(self):
-        return [(k,self[k]) for k in self.keys()]
+        return [(k, self[k]) for k in self.keys()]
 
     def values(self):
         return [self[k] for k in self.keys()]

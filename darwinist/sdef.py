@@ -7,17 +7,13 @@ import os
 from subprocess import check_output
 from lxml import etree as ET
 
-from systematic.log import Logger,LoggerError
-
 class SDEFError(Exception):
     def __str__(self):
         return self.args[0]
 
 class SDEF(object):
     def __init__(self,path):
-        self.log = Logger('sdef').default_stream
         self.path = path
-
         if not os.path.isdir(path):
             raise SDEFError('Not a directory: %s' % path)
         self.tree = ET.fromstring(check_output(['sdef',path]))

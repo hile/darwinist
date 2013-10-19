@@ -6,9 +6,7 @@ easy consumption.
 """
 
 import re
-from subprocess import check_output,CalledProcessError
-
-from systematic.log import Logger,LoggerError
+from subprocess import check_output, CalledProcessError
 
 re_header = re.compile('^CoreStorage logical volume groups \((\d+) found\)$')
 re_lvg_header = re.compile('^Logical Volume Group ([A-Z0-9-]+)$')
@@ -58,7 +56,6 @@ class coreStorage(list):
     Class for OS/X corestorage LVM implementation status parsing
     """
     def __init__(self):
-        self.log = Logger('corestorage').default_stream
         self.lvg_count = 0
         self.update()
 
@@ -74,7 +71,7 @@ class coreStorage(list):
         lvf = None
         lv = None
         try:
-            for l in check_output(['diskutil','coreStorage','list']).split('\n'):
+            for l in check_output(['diskutil', 'coreStorage', 'list']).split('\n'):
                 l = l.lstrip('|+-<> ')
                 if l.strip() == '' or l.strip('-=') == '':
                  continue
@@ -92,24 +89,24 @@ class coreStorage(list):
                     continue
                 m = re_pv_header.match(l)
                 if m:
-                    pv = coreStoragePV(lvg,m.group(1))
+                    pv = coreStoragePV(lvg, m.group(1))
                     lvg.pvs.append(pv)
                     lv = None
                     lvf = None
                     continue
                 m = re_lvf_header.match(l)
                 if m:
-                    lvf = coreStorageLVFamily(lvg,m.group(1))
+                    lvf = coreStorageLVFamily(lvg, m.group(1))
                     lvg.lvfs.append(lvf)
                     lv = None
                     continue
                 m = re_lv_header.match(l)
                 if m:
-                    lv = coreStorageLV(lvg,m.group(1))
+                    lv = coreStorageLV(lvg, m.group(1))
                     lvf.lvs.append(lv)
                     continue
                 try:
-                    (key,value) = map(lambda x: x.strip(), l.split(':',1))
+                    (key, value) = map(lambda x: x.strip(),  l.split(':', 1))
                 except ValueError:
                     raise ValueError('Error parsing line %s' % l)
                 if lv is not None:
@@ -129,8 +126,7 @@ class coreStorageLVG(dict):
     """
     Class to represent one corestorage LVG (logical volume group)
     """
-    def __init__(self,uuid):
-        self.log = Logger('corestorage').default_stream
+    def __init__(self, uuid):
         self.uuid = uuid
         self.pvs = []
         self.lvfs = []
@@ -138,44 +134,42 @@ class coreStorageLVG(dict):
     def __str__(self):
         return 'LVG %s\n%s' % (
             self.uuid,
-            '\n'.join('%20s %s' % (k,v) for k,v in self.items())
+            '\n'.join('%20s %s' % (k, v) for k, v in self.items())
         )
 
-    def __setitem__(self,item,value):
+    def __setitem__(self, item, value):
         try:
             item = LVG_HEADER_MAP[item]
         except KeyError:
             pass
-        dict.__setitem__(self,item,value)
+        dict.__setitem__(self, item, value)
 
 class coreStoragePV(dict):
     """
     Class to represent one corestorage PV (physical volume)
     """
-    def __init__(self,lvg,uuid):
-        self.log = Logger('corestorage').default_stream
+    def __init__(self, lvg, uuid):
         self.lvg = lvg
         self.uuid = uuid
 
     def __str__(self):
         return 'PV %s\n%s' % (
             self.uuid,
-            '\n'.join('%20s %s' % (k,v) for k,v in self.items())
+            '\n'.join('%20s %s' % (k, v) for k, v in self.items())
         )
 
-    def __setitem__(self,item,value):
+    def __setitem__(self, item, value):
         try:
             item = PV_HEADER_MAP[item]
         except KeyError:
             pass
-        dict.__setitem__(self,item,value)
+        dict.__setitem__(self, item, value)
 
 class coreStorageLVFamily(dict):
     """
     Core storage LV (Logical Volume) family
     """
-    def __init__(self,lvg,uuid):
-        self.log = Logger('corestorage').default_stream
+    def __init__(self, lvg, uuid):
         self.lvg = lvg
         self.uuid = uuid
         self.lvs = []
@@ -183,38 +177,38 @@ class coreStorageLVFamily(dict):
     def __str__(self):
         return 'LV Family %s\n%s' % (
             self.uuid,
-            '\n'.join('%20s %s' % (k,v) for k,v in self.items())
+            '\n'.join('%20s %s' % (k, v) for k, v in self.items())
         )
 
-    def __setitem__(self,item,value):
+    def __setitem__(self, item, value):
         try:
             item = LVFAMILY_HEADER_MAP[item]
         except KeyError:
             pass
-        dict.__setitem__(self,item,value)
+        dict.__setitem__(self, item, value)
 
 class coreStorageLV(dict):
     """
     Core storage LV (logical volume)
     """
-    def __init__(self,lvf,uuid):
-        self.log = Logger('corestorage').default_stream
+    def __init__(self, lvf, uuid):
         self.lvf = lvf
         self.uuid = uuid
 
     def __str__(self):
         return 'LV %s\n%s' % (
             self.uuid,
-            '\n'.join('%20s %s' % (k,v) for k,v in self.items())
+            '\n'.join('%20s %s' % (k, v) for k, v in self.items())
         )
 
-    def __setitem__(self,item,value):
+    def __setitem__(self, item, value):
         try:
             item = LV_HEADER_MAP[item]
         except KeyError:
             pass
-        if item in ['size','free_space','size_total','size_converted']:
+        if item in ['size', 'free_space', 'size_total', 'size_converted']:
             m = re_size.match(value)
             if m:
                 value = long(m.group(1))
-        dict.__setitem__(self,item,value)
+
+        dict.__setitem__(self, item, value)

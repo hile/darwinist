@@ -2,11 +2,11 @@
 Wrapper for OS/X diskutil command for python
 """
 
-import os,plistlib,StringIO
+import os
+import plistlib
+import StringIO
 from xml.parsers.expat import ExpatError
-
-from subprocess import Popen,PIPE
-from systematic.log import Logger,LoggerError
+from subprocess import Popen, PIPE
 
 INFO_FIELD_MAP = {
     'DeviceNode':       {'name': 'Device', 'value': lambda x: str(x)},
@@ -16,36 +16,44 @@ INFO_FIELD_MAP = {
     'FreeSpace':        {'name': 'Free', 'value': lambda x: x/1024},
     'TotalSize':        {'name': 'Sizd', 'value': lambda x: x/1024},
     'VolumeName':       {'name': 'Volume Name', 'value': lambda x: str(x)},
-    'VolumeUUID':       {'name': 'UUID','value': lambda x: str(x)},
+    'VolumeUUID':       {'name': 'UUID', 'value': lambda x: str(x)},
 }
 INFO_FIELD_ORDER = [
-    'DeviceNode','VolumeName','FilesystemName','VolumeUUID',
-    'UsedSpace', 'FreeSpace', 'TotalSize'
+    'DeviceNode',
+    'VolumeName',
+    'FilesystemName',
+    'VolumeUUID',
+    'UsedSpace',
+    'FreeSpace',
+    'TotalSize'
 ]
 
 class DiskUtilError(Exception):
-    def __str__(self):
-        return self.args[0]
+    pass
 
 class DiskInfo(dict):
-    def __init__(self,device):
-        self.log = Logger('diskutil').default_stream
-        if not os.access(device,os.R_OK):
+    def __init__(self, device):
+        if not os.access(device, os.R_OK):
             raise DiskUtilError('Device not readable: %s' % device)
 
-        cmd = ['diskutil','info','-plist',device]
-        p = Popen(cmd,stdin=PIPE,stdout=PIPE,stderr=PIPE)
-        (stdout,stderr) = p.communicate()
+        cmd = ['diskutil', 'info', '-plist', device]
+        p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        (stdout, stderr) = p.communicate()
         try:
             plist = StringIO.StringIO(stdout)
             self.update(plistlib.readPlist(plist))
-        except ExpatError,emsg:
+        except ExpatError, emsg:
             raise DiskUtilError('Error parsing plist: %s' % stdout)
+
         if self.has_key('TotalSize') and self.has_key('FreeSpace'):
-            self['UsedSpace'] = self['TotalSize'] - self['FreeSpace']
-            self['UsedPercent'] = int(round(
-                1-(float(self['FreeSpace'])/float(self['TotalSize']))
-            ))
+            self['UsedSpace'] = self.TotalSize - self.FreeSpace
+            self['UsedPercent'] = int(round(1-(float(self.FreeSpace) / float(self.TotalSize))))
+
+    def __getattr__(self, attr):
+        try:
+            return self[attr]
+        except KeyError:
+            raise AttributeError
 
     def keys(self):
         """
@@ -55,9 +63,9 @@ class DiskInfo(dict):
 
     def items(self):
         """
-        Return (key,value) sorted by key
+        Return (key, value) sorted by key
         """
-        return [(k,self[k]) for k in self.keys()]
+        return [(k, self[k]) for k in self.keys()]
 
     def values(self):
         """

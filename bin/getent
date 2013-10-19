@@ -3,31 +3,31 @@
 # Very basic implementation of getent command for OS/X
 #
 
-import grp,pwd
+import grp, pwd
 from systematic.shell import Script
 
 script = Script()
-script.add_argument('database',help='Account database to lookup')
-script.add_argument('names',nargs='*',help='Names to lookup')
+script.add_argument('database', help='Account database to lookup')
+script.add_argument('names', nargs='*', help='Names to lookup')
 args = script.parse_args()
 
 script.log.debug('Loading %s' % args.database)
 
 if args.database == 'passwd':
-	accounts = dict((a.pw_name,a) for a in pwd.getpwall())
+	accounts = dict((a.pw_name, a) for a in pwd.getpwall())
 	for name in sorted(accounts.keys()):
 		if args.names and name not in args.names:
 			continue
 		a = accounts[name]
-		print ':'.join([a.pw_name,a.pw_passwd,'%s'%a.pw_uid,'%s'%a.pw_gid,a.pw_gecos,a.pw_dir,a.pw_shell])
+		print ':'.join([a.pw_name, a.pw_passwd, '%s'%a.pw_uid, '%s'%a.pw_gid, a.pw_gecos, a.pw_dir, a.pw_shell])
 
 elif args.database == 'group':
-	groups = dict((g.gr_name,g) for g in grp.getgrall())
+	groups = dict((g.gr_name, g) for g in grp.getgrall())
 	for name in sorted(groups.keys()):
 		if args.names and name not in args.names:
 			continue
 		g = groups[name]
-		print ':'.join([g.gr_name,g.gr_passwd,'%s'%g.gr_gid,','.join(g.gr_mem)])
+		print ':'.join([g.gr_name, g.gr_passwd, '%s'%g.gr_gid, ', '.join(g.gr_mem)])
 
 else:
-	script.exit(1,'Unsupported database name: %s' % args.database)
+	script.exit(1, 'Unsupported database name: %s' % args.database)

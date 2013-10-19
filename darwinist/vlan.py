@@ -3,9 +3,7 @@
 OS/X implementation of the systematic VLAN management API
 """
 
-from subprocess import Popen,PIPE
-
-from systematic.log import Logger,LoggerError
+from subprocess import Popen, PIPE
 
 NO_VLANS_MESSAGE = 'There are no VLANs currently configured on this system.'
 
@@ -22,40 +20,37 @@ class VLANError(Exception):
 
 class VLAN(object):
     def __init__(self):
-        self.log = Logger('vlan').default_stream
-
         for k in VLANLIST_LINE_MAP.keys():
-            setattr(self,k,'NOT SET')
+            setattr(self, k, 'NOT SET')
 
     def __repr__(self):
-        return '%s TAG %s PARENT %s' % (self.port,self.tag,self.parent)
+        return '%s TAG %s PARENT %s' % (self.port, self.tag, self.parent)
 
-    def create(self,name,parent,tag):
-        cmd = ['networksetup','-createVLAN', name, parent, str(tag)]
-        p = Popen(cmd,stdin=PIPE,stdout=PIPE,stderr=PIPE)
-        (stdout,stderr) = p.communicate()
+    def create(self, name, parent, tag):
+        cmd = ['networksetup', '-createVLAN', name, parent, str(tag)]
+        p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        (stdout, stderr) = p.communicate()
         if p.returncode!=0:
             print stdout
             raise VLANError('ERROR creating VLAN %s' % tag)
+
         self.name = name
         self.parent = parent
         self.tag = tag
 
     def remove(self):
-        cmd = ['networksetup','-deleteVLAN', self.name, self.parent, str(self.tag)]
-        p = Popen(cmd,stdin=PIPE,stdout=PIPE,stderr=PIPE)
-        (stdout,stderr) = p.communicate()
+        cmd = ['networksetup', '-deleteVLAN', self.name, self.parent, str(self.tag)]
+        p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        (stdout, stderr) = p.communicate()
         if p.returncode!=0:
             print stdout
             raise VLANError('ERROR removing VLAN %s' % self.tag)
 
 class VLANList(list):
     def __init__(self):
-        self.log = Logger('vlan').default_stream
-
-        cmd = ['networksetup','-listVLANs']
-        p = Popen(cmd,stdin=PIPE,stdout=PIPE,stderr=PIPE)
-        (stdout,stderr) = p.communicate()
+        cmd = ['networksetup', '-listVLANs']
+        p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        (stdout, stderr) = p.communicate()
         lines = stdout.split('\n')
         if lines[0] == NO_VLANS_MESSAGE:
             return
@@ -66,8 +61,9 @@ class VLANList(list):
                 if entry is not None:
                     self.append(entry)
                 entry = None
-            for k,v in VLANLIST_LINE_MAP.items():
+
+            for k, v in VLANLIST_LINE_MAP.items():
                 if l[:len(v)]==v:
                     if entry is None:
                         entry = VLAN()
-                    setattr(entry,k,l[len(v):].lstrip())
+                    setattr(entry, k, l[len(v):].lstrip())

@@ -3,15 +3,15 @@
 Classes to handle AFP mountpoints, mounting and configuring them.
 """
 
-import os,re
-from configobj import ConfigObj
-from subprocess import call,CalledProcessError
+import os
+import re
 
-from systematic.log import Logger,LoggerError
+from configobj import ConfigObj
+from subprocess import call, CalledProcessError
 
 re_mountpoint = re.compile(r'^/Volumes/[A-Za-z0-9_-]*$')
 
-DEFAULT_CONFIG_PATH = os.path.join(os.getenv('HOME'),'.afpshares.conf')
+DEFAULT_CONFIG_PATH = os.path.join(os.getenv('HOME'), '.afpshares.conf')
 
 class AFPShareError(Exception):
     """
@@ -24,14 +24,13 @@ class AFPShareConfig(dict):
     """
     Reader for AFP share configuration files.
     """
-    def __init__(self,config_path=DEFAULT_CONFIG_PATH):
-        self.log = Logger('afpshare').default_stream
+    def __init__(self, config_path=DEFAULT_CONFIG_PATH):
         dict.__init__(self)
         self.config = None
         self.path = config_path
         if not os.path.isfile(self.path):
             raise AFPShareError('No such file: %s' % self.path)
-        if not os.access(self.path,os.R_OK):
+        if not os.access(self.path, os.R_OK):
             raise AFPShareError(
                 'No permission to read configuration: %s' % self.path
             )
@@ -43,12 +42,12 @@ class AFPShareConfig(dict):
             self.options = {}
         for k in filter(lambda k: k!='Options', self.config.keys()):
             try:
-                self[k] = AFPShareDisk(k,self.config[k])
-            except AFPShareError,e:
+                self[k] = AFPShareDisk(k, self.config[k])
+            except AFPShareError, e:
                 print e
                 continue
 
-    def __getattr__(self,attr):
+    def __getattr__(self, attr):
         if attr == 'disks':
             return self.values()
         try:
@@ -57,7 +56,7 @@ class AFPShareConfig(dict):
             pass
         raise AttributeError('No such AFPShareConfig attribute: %s' % attr)
 
-    def __getitem__(self,item):
+    def __getitem__(self, item):
         try:
             return self[item]
         except KeyError:
@@ -68,8 +67,7 @@ class AFPShareDisk(dict):
     """
     AFP network share disk specification
     """
-    def __init__(self,name,settings):
-        self.log = Logger('afpshare').default_stream
+    def __init__(self, name, settings):
         dict.__init__(self)
         self.name = name
         self.update(**{
@@ -80,11 +78,11 @@ class AFPShareDisk(dict):
             'password': None,
         })
 
-        for k,v in settings.items():
+        for k, v in settings.items():
             if not self.has_key(k):
                 raise AFPShareError('Unsupported disk option: %s' % k)
             self[k] = v
-        for k in ['address','path','mountpoint']:
+        for k in ['address', 'path', 'mountpoint']:
             if self[k] is None:
                 raise AFPShareError('Missing required option %s' % k)
 
@@ -94,12 +92,12 @@ class AFPShareDisk(dict):
         if self.has_key('password') and not self.has_key('username'):
             raise AFPShareError('Password defined but no username given')
 
-        if not re.match(re_mountpoint,self.mountpoint):
+        if not re.match(re_mountpoint, self.mountpoint):
             raise AFPShareError(
                 'Unsupported mountpoint path: %s' % self.mountpoint
             )
 
-    def __getattr__(self,attr):
+    def __getattr__(self, attr):
         if attr == 'afp_path_nopass':
             #noinspection PyStringFormat
             return 'afp://%(address)s%(path)s' % self
@@ -113,11 +111,11 @@ class AFPShareDisk(dict):
             return self[attr]
         except KeyError:
             pass
-        raise AttributeError('No such %s attr: %s' % (self.name,attr))
+        raise AttributeError('No such %s attr: %s' % (self.name, attr))
 
     def __str__(self):
         return '%s: %s mounted on %s' % (
-            self.name, self.afp_path_nopass, self.mountpoint
+            self.name,  self.afp_path_nopass, self.mountpoint
         )
 
     def status(self):
@@ -127,7 +125,7 @@ class AFPShareDisk(dict):
         """
         if not os.path.ismount(self.mountpoint):
             return 'not mounted'
-        if not os.access(self.mountpoint,os.W_OK):
+        if not os.access(self.mountpoint, os.W_OK):
             return 'mounted by other user'
         else:
             return 'mounted by myself'
@@ -143,15 +141,15 @@ class AFPShareDisk(dict):
             try:
                 os.makedirs(self.mountpoint)
                 if os.stat(self.mountpoint).st_uid != os.getuid():
-                    os.chown(self.mountpoint,os.getpid(),os.getgid())
-            except IOError,(ecode,emsg):
+                    os.chown(self.mountpoint, os.getpid(), os.getgid())
+            except IOError, (ecode, emsg):
                 raise AFPShareError(emsg)
-            except OSError,(ecode,emsg):
+            except OSError, (ecode, emsg):
                 raise AFPShareError(emsg)
 
         try:
-            call(['mount_afp',self.afp_path,self.mountpoint])
-        except CalledProcessError,emsg:
+            call(['mount_afp', self.afp_path, self.mountpoint])
+        except CalledProcessError, emsg:
             raise AFPShareError(emsg)
 
     def umount(self):
@@ -160,10 +158,10 @@ class AFPShareDisk(dict):
         """
         if not os.path.ismount(self.mountpoint):
             return
-        if not os.access(self.mountpoint,os.W_OK):
+        if not os.access(self.mountpoint, os.W_OK):
             raise AFPShareError('No write access to %s' % self.mountpoint)
         try:
-            call(['hdiutil','detach',self.mountpoint])
-        except CalledProcessError,emsg:
+            call(['hdiutil', 'detach', self.mountpoint])
+        except CalledProcessError, emsg:
             raise AFPShareError(emsg)
 

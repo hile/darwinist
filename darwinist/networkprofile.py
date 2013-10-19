@@ -3,10 +3,9 @@
 Control and see status of OS/X network interfaces from python.
 """
 
-import os,logging,appscript
+import os
+import appscript
 from configobj import ConfigObj
-
-from systematic.log import Logger,LoggerError
 
 NETWORK_CONNECTION_TYPES = {
     'wlan':         2,
@@ -16,20 +15,16 @@ NETWORK_CONNECTION_TYPES = {
     'vpn':          10,
 }
 
+
 class NetworkConfigError(Exception):
-    """
-    Exceptions raised while parsing OS/X network profiles
-    """
-    def __str__(self):
-        return self.args[0]
+    pass
+
 
 class NetworkProfileList(object):
     """
     List of network profiles found on the OS/X system
     """
     def __init__(self,config=None):
-        self.log = Logger('networkprofile').default_stream
-
         self.config = self.__read_config(config)
         try:
             self.app = appscript.app('System Events')
@@ -48,6 +43,7 @@ class NetworkProfileList(object):
         )
         if not len(names):
             raise KeyError('No such connection: %s' % item)
+
         try:
             return NetworkConnection(item,profiles=self)
         except appscript.reference.CommandError:
@@ -104,8 +100,6 @@ class NetworkConnection(object):
     Details and control of one OS/X network connection
     """
     def __init__(self,name,profiles=None):
-        self.log = Logger('networkprofile').default_stream
-
         if profiles is None:
             profiles = NetworkProfileList()
         self.name = name
@@ -114,24 +108,36 @@ class NetworkConnection(object):
         names = filter(lambda s: s.name.get()==name, profiles.location.services.get())
         if not len(names):
             raise NetworkConfigError('No such connection: %s' % name)
+
         try:
             self.connection = profiles.location.services[name].get()
         except KeyError,e:
             raise NetworkConfigError(str(e).strip("'"))
 
-    def __eq__(self,other):
+    def __cmp__(self, other):
         if not hasattr(other,'app'):
             return False
         if self.connection_type != other.connection_type:
             return False
-        if self.name != other.name:
-            return False
-        return True
+        return cmp(self.name, other.name)
 
-    def __ne__(self,other):
-        if self.__eq__(other):
-            return False
-        return True
+    def __eq__(self, other):
+        return self.__cmp__(other) == 0
+
+    def __eq__(self, other):
+        return self.__cmp__(other) != 0
+
+    def __lt__(self, other):
+        return self.__cmp__(other) < 0
+
+    def __lte__(self, other):
+        return self.__cmp__(other) <= 0
+
+    def __gt__(self, other):
+        return self.__cmp__(other) > 0
+
+    def __gte__(self, other):
+        return self.__cmp__(other) >= 0
 
     def __hash__(self):
         return '%s %s' % (self.connection_type,self.name)
@@ -143,48 +149,42 @@ class NetworkConnection(object):
             self.connected and 'connected' or 'not connected'
         )
 
-    def __getattr__(self,item):
-        """
-        Dynamic attributes available:
-        mac_address,mac     MAC address
-        speed,mtu,duplex    Integer interface parameters
-        kind                OS/X interface type (kind)
-        connection_type     OS/X network connection type
-        connected           Boolean indicating if the link is up
-        """
-        if item.lower() in ['mac','mac_address']:
-            item = 'MAC_address'
+    def get_interface_attribute(self, item):
+        try:
+            interface = self.connection.interface.get()
+            return getattr(interface,item).get()
+        except appscript.reference.CommandError:
+            raise AttributeError('Value %s not available for interface %s' % (item,self.name))
 
-        if item in ['MAC_address','speed','mtu','duplex']:
-            try:
-                interface = self.connection.interface.get()
-                return getattr(interface,item).get()
-            except appscript.reference.CommandError:
-                raise AttributeError(
-                    'Value %s not available for interface %s' % (item,self.name)
-                )
+    @property
+    def mac(self):
+        return self.get_interface_attribute('MAC_address')
 
-        if item == 'kind':
-            try:
-                return self.connection.kind.get()
-            except appscript.reference.CommandError:
-                raise NetworkConfigError(
-                    'Error getting service type for %s' % self.name
-                )
+    @property
+    def mac_address(self):
+        return self.get_interface_attribute('MAC_address')
 
-        if item == 'connection_type':
-            kind = self.kind
-            for k,v in NETWORK_CONNECTION_TYPES.items():
-                if v == kind:
-                     return k
-            return 'unknown'
+    @property
+    def kind(self):
+        try:
+            return self.connection.kind.get()
+        except appscript.reference.CommandError:
+            raise NetworkConfigError('Error getting service type for %s' % self.name)
 
-        if item == 'connected':
-            try:
-                return self.connection.current_configuration.connected.get()
-            except appscript.reference.CommandError:
-                return False
-        raise AttributeError('No such NetworkConnection attribute: %s' % item)
+    @property
+    def connection_type(self):
+        kind = self.kind
+        for k,v in NETWORK_CONNECTION_TYPES.items():
+            if v == kind:
+                 return k
+        return 'unknown'
+
+    @property
+    def connected(self):
+        try:
+            return self.connection.current_configuration.connected.get()
+        except appscript.reference.CommandError:
+            return False
 
     def connect(self):
         """
@@ -196,7 +196,6 @@ class NetworkConnection(object):
         """
         if self.connected:
             raise NetworkConfigError('Already connected: %s' % self.name)
-        logging.info('Connecting to network profile: %s' % self.name)
         self.app.connect(self.connection)
 
     def disconnect(self):
@@ -205,6 +204,5 @@ class NetworkConnection(object):
         """
         if not self.connected:
             raise NetworkConfigError('Not connected: %s' % self.name)
-        logging.info('Disconnecting network profile: %s' % self.name)
         self.app.disconnect(self.connection)
 

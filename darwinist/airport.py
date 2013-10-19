@@ -2,9 +2,8 @@
 """
 Module for Apple OS/X airport status command access from python
 """
-import os,subprocess
-
-from systematic.log import Logger,LoggerError
+import os
+from subprocess import check_output, CalledProcessError
 
 AIRPORT_BINARY = '/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport'
 
@@ -20,7 +19,6 @@ class AirportStatus(dict):
     Class to call the system 'airport' command.
     """
     def __init__(self):
-        self.log = Logger('diskimage').default_stream
         if not os.path.isfile(AIRPORT_BINARY):
             raise AirportError('No such command: %s' % AIRPORT_BINARY)
 
@@ -28,7 +26,7 @@ class AirportStatus(dict):
         self.probe()
         return '%(BSSID)s %(SSID)s channel %(channel)s %(agrCtlRSSI)s dB' % self
 
-    def __getattr__(self,attr):
+    def __getattr__(self, attr):
         try:
             if not self.keys():
                 self.probe()
@@ -42,12 +40,18 @@ class AirportStatus(dict):
         Probe airport status
         """
         self.clear()
-        for l in subprocess.check_output([AIRPORT_BINARY,'-I']).split('\n'):
+        try:
+            data = check_output([AIRPORT_BINARY, '-I'])
+        except CalledProcessError, emsg:
+            print emsg
+            return
+
+        for l in data.split('\n'):
             if l.strip() == '':
                 continue
 
             try:
-                (key,value) = map(lambda x: x.strip(), l.split(':',1))
+                (key, value) = map(lambda x: x.strip(),  l.split(':', 1))
                 self[key] = value
             except ValueError:
                 raise AirportError('Error parsing line: %s' % l)
@@ -56,20 +60,28 @@ class AirportStatus(dict):
             if not self.has_key(k):
                 continue
 
-            self[k] = ':'.join(['%02x'.upper() % int(x,16) for x in self[k].split(':')])
+            self[k] = ':'.join(['%02x'.upper() % int(x, 16) for x in self[k].split(':')])
 
     def proximity(self):
         """
         Return proximity of base stations based on signal levels
         """
-        headers = ['SSID','BSSID','RSSI','CHANNEL','HT','CC','SECURITY']
+        headers = ['SSID', 'BSSID', 'RSSI', 'CHANNEL', 'HT', 'CC', 'SECURITY']
         aps = []
-        for l in subprocess.check_output([AIRPORT_BINARY,'-s',self.SSID]).split('\n'):
+
+        try:
+            data = check_output([AIRPORT_BINARY, '-s', self.SSID])
+        except CalledProcessError, emsg:
+            print emsg
+            return
+
+        for l in data.split('\n'):
             if l.strip() == '':
                 continue
             l = l.rstrip()
             if headers[:5] == [x.strip() for x in l.split()][:5]:
                 continue
+
             ssid =  l[:32].lstrip()
             bssid = l[33:50].strip("'").upper()
             rssi =  int(l[51:55].strip())
@@ -77,6 +89,7 @@ class AirportStatus(dict):
             aps.append({
                 'SSID': ssid, 'BSSID': bssid, 'RSSI': rssi, 'CHANNEL': channel
             })
-        aps.sort(lambda x,y: cmp(y['RSSI'],x['RSSI']))
+
+        aps.sort(lambda x,y: cmp(y['RSSI'], x['RSSI']))
         return aps
 

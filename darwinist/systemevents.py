@@ -5,8 +5,6 @@ Abstraction of AppleScript system events class for python
 
 import appscript
 
-from systematic.log import Logger,LoggerError
-
 FOLDER_NAME_MAP = {
     'applications': 'applications_folder',
     'application_support': 'application_support_folder',
@@ -36,47 +34,43 @@ class SystemEventsError(Exception):
     """
     Exceptions for OS/X system events
     """
-    def __str__(self):
-        return self.args[0]
+    pass
 
 class OSXUserAccounts(dict):
     """
     List of user accounts from appscript system events
     """
     def __init__(self):
-        self.log = Logger('systemevents').default_stream
-
         try:
             self.app = appscript.app('System Events')
-        except appscript.reference.CommandError,e:
+        except appscript.reference.CommandError, e:
             raise SystemEventsError('Appscript initialization error: %s' % e.errormessage)
 
         for ref in self.app.users.get():
-            u = OSXUserAccount(self,ref)
+            u = OSXUserAccount(self, ref)
             self[u.name] = u
 
 class OSXUserAccount(dict):
     """
     One user account parsed from appscript system events API
     """
-    def __init__(self,app,reference):
-        self.log = Logger('systemevents').default_stream
+    def __init__(self, app, reference):
         self.app = app
         self.reference = reference
 
-    def __getattr__(self,attr):
+    def __getattr__(self, attr):
         try:
             return self[attr]
         except KeyError:
             pass
         raise AttributeError
 
-    def __getitem__(self,item):
+    def __getitem__(self, item):
         if item not in self.keys():
             raise KeyError('No such OSXUserAccount item: %s' % item)
         if item == 'home_directory':
-            return getattr(self.reference,item).get().path
-        return getattr(self.reference,item).get()
+            return getattr(self.reference, item).get().path
+        return getattr(self.reference, item).get()
 
     def __str__(self):
         return self.full_name
@@ -89,59 +83,56 @@ class OSXUserAccount(dict):
 
     def items(self):
         """
-        User details as (key,value) list
+        User details as (key, value) list
         """
-        return [(k,self[k]) for k in self.keys()]
+        return [(k, self[k]) for k in self.keys()]
 
 class OSXUserFolders(dict):
     """
     List of OS/X user folders from system events API
     """
     def __init__(self):
-        self.log = Logger('systemevents').default_stream
-
         try:
             self.app = appscript.app('System Events')
-        except appscript.reference.CommandError,e:
+        except appscript.reference.CommandError, e:
             raise SystemEventsError('Appscript initialization error: %s' % e.errormessage)
 
         for k in sorted(FOLDER_NAME_MAP.keys()):
-            ref = getattr(self.app,FOLDER_NAME_MAP[k]).get()
+            ref = getattr(self.app, FOLDER_NAME_MAP[k]).get()
             if ref is None:
                 self[k] = None
                 continue
-            self[k] = OSXFolderItem(self,ref)
+            self[k] = OSXFolderItem(self, ref)
 
 class OSXFolderItem(dict):
     """
     One OS/X folder item from system events
     """
-    def __init__(self,app,reference):
-        self.log = Logger('systemevents').default_stream
+    def __init__(self, app, reference):
         if reference is None:
             raise
         self.app = app
         self.reference = reference
 
-    def __getattr__(self,attr):
+    def __getattr__(self, attr):
         try:
             return self[attr]
         except KeyError:
             pass
         raise AttributeError
 
-    def __getitem__(self,item):
-        if item in ['ctime','mtime']:
+    def __getitem__(self, item):
+        if item in ['ctime', 'mtime']:
             if item == 'ctime':
                 item = 'creation_date'
             if item == 'mtime':
                 item = 'modification_date'
-            return int(getattr(self.reference,item).get().strftime('%s'))
+            return int(getattr(self.reference, item).get().strftime('%s'))
         if item == 'path':
             item = 'POSIX_path'
         if item not in self.keys():
             raise KeyError('No such OSXFolderItem item: %s' % item)
-        return getattr(self.reference,item).get()
+        return getattr(self.reference, item).get()
 
     def __str__(self):
         return self.path
@@ -150,12 +141,10 @@ class OSXFolderItem(dict):
         """
         Folder detail keys
         """
-        return [k.name for k in self.reference.properties.get().keys()] + [
-            'ctime','mtime','path'
-        ]
+        return [k.name for k in self.reference.properties.get().keys()] + ['ctime', 'mtime', 'path']
 
     def items(self):
         """
-        Folder details as (key,value) list
+        Folder details as (key, value) list
         """
-        return [(k,self[k]) for k in self.keys()]
+        return [(k, self[k]) for k in self.keys()]

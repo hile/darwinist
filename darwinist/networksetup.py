@@ -3,10 +3,10 @@
 Wrapper to call the networksetup command line script.
 """
 
-import os,re
-from subprocess import check_output,CalledProcessError
-from systematic.log import Logger,LoggerError
-from seine.address import IPv4Address,EthernetMACAddress
+import os
+import re
+from subprocess import check_output, CalledProcessError
+from seine.address import IPv4Address, EthernetMACAddress
 
 CMD = '/usr/sbin/networksetup'
 
@@ -26,8 +26,6 @@ class NetworkSetup(object):
     Wrapper for OS/X 'networksetup' command line tool
     """
     def __init__(self):
-        self.log = Logger('networksetup').default_stream
-
         if not os.path.isfile(CMD):
             raise NetworkSetupError('No such file: %s' % CMD)
         if not os.access(CMD,os.X_OK):
@@ -48,15 +46,7 @@ class NetworkService(object):
     One specific network service parsed from 'networksetup' output
     """
     def __init__(self,name):
-        self.log = Logger('networksetup').default_stream
         self.name = name
-
-    def __getattr__(self,attr):
-        if attr == 'configuration':
-            return self.__parse_info()
-        if attr == 'mac_address':
-            return self.__parse_mac_address()
-        raise AttributeError('No such NetworkService attribute: %s' % attr)
 
     def __repr__(self):
         return self.name
@@ -72,6 +62,7 @@ class NetworkService(object):
             ).split('\n'))
         except CalledProcessError:
             return details
+
         for l in out:
             if l == 'Manual Configuration':
                 details['ipv4_mode'] = 'manual'
@@ -79,10 +70,12 @@ class NetworkService(object):
             if l == 'DHCP Configuration':
                 details['ipv4_mode'] = 'dhcp'
                 continue
+
             try:
                 (key,value) = [x.strip() for x in l.split(':',1)]
             except ValueError:
                 raise ValueError('Error parsing line: %s' % l)
+
             if value == 'none':
                 value = None
             if key in ['Subnet mask','IP address','Router']:
@@ -91,6 +84,7 @@ class NetworkService(object):
                 value = EthernetMACAddress(value)
 
             details[key] = value
+
         return details
 
     def __parse_mac_address(self):
@@ -111,6 +105,14 @@ class NetworkService(object):
             return None
         return mac
 
+    @property
+    def configuration(self):
+        return self.__parse_info()
+
+    @property
+    def mac_address(self):
+        return self.__parse_mac_address()
+
     def set_mode(self,mode,client_id=None,ipaddress=None,netmask=None,router=None):
         """
         Set interface mode to given value. Each mode has it's specific allowed flags,
@@ -125,9 +127,7 @@ class NetworkService(object):
             try:
                 check_output(['networksetup','-setbootp',self.name])
             except CalledProcessError:
-                raise NetworkSetupError(
-                    'Error setting %s to BOOTP mode' % self.name
-                )
+                raise NetworkSetupError('Error setting %s to BOOTP mode' % self.name)
 
         elif mode == 'dhcp':
             cmd = ['networksetup','-setdhcp',self.name]
@@ -136,9 +136,7 @@ class NetworkService(object):
             try:
                 check_output(cmd)
             except CalledProcessError:
-                raise NetworkSetupError(
-                    'Error setting %s to DHCP mode' % self.name
-                )
+                raise NetworkSetupError('Error setting %s to DHCP mode' % self.name)
 
         elif mode == 'manual':
             if ipaddress is None:
@@ -156,6 +154,7 @@ class NetworkService(object):
                     netmask = IPv4Address(netmask)
                 except ValueError:
                     raise NetworkSetupError('Invalid IPv4 Address: %s' % netmask)
+
             if router is None:
                 raise NetworkSetupError('Manual mode requires valid router')
             else:
@@ -169,9 +168,8 @@ class NetworkService(object):
                 netmask.ipaddress,
                 router.ipaddress
             ]
+
             try:
                 return check_output(cmd)
             except CalledProcessError:
-                raise NetworkSetupError(
-                    'Error setting %s to manual mode' % self.name
-                )
+                raise NetworkSetupError('Error setting %s to manual mode' % self.name)

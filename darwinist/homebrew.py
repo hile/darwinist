@@ -7,20 +7,20 @@ This is only meant to allow automatic tool installs and not at all to
 replace or replicate all functionality of direct use of brew command.
 
 Example usage:
-import logging,sys
-logging.basicConfig(level=logging.DEBUG)
 brew = Homebrew()
 
 # Example how to list installed packages
-#for package in brew.values(): print package.name, package.versions
+for package in brew.values():
+    print package.name, package.versions
 
 # Example how to list available packages
-#for name in brew.available_formulas(): print name
+for name in brew.available_formulas():
+    print name
 
 # Example how to update homebrew system
-#brew.update()
-#brew.upgrade_all()
-#brew.cleanup()
+brew.update()
+brew.upgrade_all()
+brew.cleanup()
 
 # Example how to install packages
 for arg in sys.argv[1:]:
@@ -31,29 +31,21 @@ for arg in sys.argv[1:]:
 
 """
 
-import os,logging
-
-from subprocess import Popen,PIPE
-from systematic.log import Logger,LoggerError
+import os
+from subprocess import Popen, PIPE
 
 HOMEBREW_PREFIX = '/usr/local'
-HOMEBREW_FORMULAS = os.path.join(HOMEBREW_PREFIX,'Library','Formula')
-HOMEBREW_DEFAULT_COMMAND = os.path.join(HOMEBREW_PREFIX,'bin','brew')
+HOMEBREW_FORMULAS = os.path.join(HOMEBREW_PREFIX, 'Library', 'Formula')
+HOMEBREW_DEFAULT_COMMAND = os.path.join(HOMEBREW_PREFIX, 'bin', 'brew')
 
 class HomebrewError(Exception):
-    """
-    Exception raised trying to run homebrew commands
-    """
-    def __str__(self):
-        return self.args[0]
+    pass
 
 class Homebrew(dict):
     """
     Wrapper for homebrew packaging system's brew command
     """
-    def __init__(self,brew=HOMEBREW_DEFAULT_COMMAND):
-        self.log = Logger('homebrew').default_stream
-        self.log = logging.getLogger('modules')
+    def __init__(self, brew=HOMEBREW_DEFAULT_COMMAND):
         self.brew = brew
         self.update_installed()
 
@@ -65,10 +57,9 @@ class Homebrew(dict):
 
     def items(self):
         """
-        Return name,package as sorted by name with self.keys()
+        Return name, package as sorted by name with self.keys()
         """
-        return [(k,self[k]) for k in self.keys()]
-
+        return [(k, self[k]) for k in self.keys()]
 
     def values(self):
         """
@@ -81,11 +72,11 @@ class Homebrew(dict):
         Update our list of installed homebrew package names
         """
         self.clear()
-        cmd = [self.brew,'list']
-        p = Popen(cmd,stdin=PIPE,stdout=PIPE,stderr=PIPE)
-        (stdout,stderr) = p.communicate()
-        for l in filter(lambda x: x.strip()!='', stdout.split('\n')):
-            self[l] = HomebrewPackage(self,l)
+        cmd = [self.brew, 'list']
+        p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        (stdout, stderr) = p.communicate()
+        for l in filter(lambda x: x.strip()!='',  stdout.split('\n')):
+            self[l] = HomebrewPackage(self, l)
 
     def available_formulas(self):
         """
@@ -99,11 +90,9 @@ class Homebrew(dict):
         """
         Run brew clean to remove stale files
         """
-        self.log.debug('Homebrew running: brew clean')
-        cmd = [self.brew,'cleanup']
-        p = Popen(cmd,stdin=PIPE,stdout=PIPE,stderr=PIPE)
-        (stdout,stderr) = p.communicate()
-        #noinspection PySimplifyBooleanCheck
+        cmd = [self.brew, 'cleanup']
+        p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        (stdout, stderr) = p.communicate()
         if p.returncode != 0:
             raise HomebrewError('Error cleaning up homebrew: %s' % stderr)
         return stdout
@@ -113,11 +102,9 @@ class Homebrew(dict):
         """
         Update homebrew package descriptions with brew update
         """
-        self.log.debug('Homebrew running: brew update')
-        cmd = [self.brew,'update']
-        p = Popen(cmd,stdin=PIPE,stdout=PIPE,stderr=PIPE)
-        (stdout,stderr) = p.communicate()
-        #noinspection PySimplifyBooleanCheck
+        cmd = [self.brew, 'update']
+        p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        (stdout, stderr) = p.communicate()
         if p.returncode != 0:
             raise HomebrewError('Error updating homebrew\n%s' % stdout)
         return stdout
@@ -127,31 +114,29 @@ class Homebrew(dict):
         Run brew upgrade --all to upgrade installed packages. Running
         self.cleanup() afterwards is recommended to get rid of old versions.
         """
-        self.log.debug('Homebrew running: brew upgrade --all')
-        cmd = [self.brew,'upgrade','--all']
-        p = Popen(cmd,stdin=PIPE,stdout=PIPE,stderr=PIPE)
-        (stdout,stderr) = p.communicate()
-        #noinspection PySimplifyBooleanCheck
+        cmd = [self.brew, 'upgrade', '--all']
+        p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        (stdout, stderr) = p.communicate()
         if p.returncode != 0:
             raise HomebrewError('Error upgrading brew packages\n%s' % stdout)
         return stdout
 
-    def is_installed(self,package):
+    def is_installed(self, package):
         """
-        Returns if package is installed, at least some version
+        Returns if package is installed,  at least some version
         """
         return package in self.keys()
 
-    def install(self,package,force_install=False):
+    def install(self, package, force_install=False):
         """
         Install package if formula is available
         """
         if not force_install and self.is_installed(package):
-            self.log.debug('Homebrew already installed: %s' % package)
             return
         if not package in self.available_formulas():
             raise HomebrewError('Homebrew: unknown package: %s' % package)
-        package = HomebrewPackage(self,package)
+
+        package = HomebrewPackage(self, package)
         package.install()
         self[package.name] = package
 
@@ -159,33 +144,32 @@ class HomebrewPackage(object):
     """
     Abstraction for one homebrew package, with multiple possible versions
     """
-    def __init__(self,brew,name):
-        self.log = Logger('homebrew').default_stream
+    def __init__(self, brew, name):
         self.brew = brew
         self.name = name
-        self.cellar = os.path.join(HOMEBREW_PREFIX,'Cellar',name)
+        self.cellar = os.path.join(HOMEBREW_PREFIX, 'Cellar', name)
 
     def __repr__(self):
-        return '%s in %s' % (self.name,self.cellar)
+        return '%s in %s' % (self.name, self.cellar)
 
-    def __getattr__(self,attr):
+    def __getattr__(self, attr):
         if attr == 'versions':
             return os.listdir(self.cellar)
+
         raise AttributeError('No such HomebrewPackage attribute: %s' % attr)
 
-    def install(self,force_install=False):
+    def install(self, force_install=False):
         """
         Install a package from homebrew
         """
         if os.path.isdir(self.cellar) and not force_install:
-            self.log.debug('Homebrew already installed: %s' % self.name)
             return
 
-        self.log.debug('Homebrew running: brew install %s' % self.name)
-        cmd = [self.brew.brew,'install',self.name]
-        p = Popen(cmd,stdin=PIPE,stdout=PIPE,stderr=PIPE)
-        (stdout,stderr) = p.communicate()
-        #noinspection PySimplifyBooleanCheck
+        cmd = [self.brew.brew, 'install', self.name]
+        p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        (stdout, stderr) = p.communicate()
+
         if p.returncode != 0:
-            raise HomebrewError('Homebrew: error installing %s\n%s' % (self.name,stdout))
-        return stdout,stderr
+            raise HomebrewError('Homebrew: error installing %s\n%s' % (self.name, stdout))
+
+        return stdout, stderr
