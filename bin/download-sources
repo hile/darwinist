@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+
+import os
+import xattr
+import plistlib
+import tempfile
+
+from subprocess import check_output, CalledProcessError
+from systematic.shell import Script
+
+URLS_ATTR = 'com.apple.metadata:kMDItemWhereFroms'
+
+script = Script()
+script.add_argument('paths', nargs='*', help='Paths to process')
+args = script.parse_args()
+
+def parse_binary_plist(value):
+    tmpfile = tempfile.NamedTemporaryFile()
+    tmpfile.write(value)
+    tmpfile.flush()
+    check_output(['plutil','-convert','xml1',tmpfile.name])
+    return plistlib.readPlist(tmpfile.name)
+
+for path in args.paths:
+    if not os.path.isfile(path):
+        script.log.debug('No such file: %s' % path)
+        continue
+    
+    attr = xattr.xattr(path)
+    if not URLS_ATTR in attr.keys():
+        script.log.debug('No such attribute in %s: %s' % (path, URLS_ATTR))
+        continue
+
+    print path
+    print '\n'.join('\t%s'%x for x in parse_binary_plist(attr.get(URLS_ATTR)))
