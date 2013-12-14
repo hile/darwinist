@@ -45,6 +45,19 @@ class DiskImagesConfig(dict):
     def values(self):
         return [self[k] for k in self.keys()]
 
+    def match(self, value):
+        if value in self.keys():
+            return self[value]
+
+        for name, dmg in self.items():
+            if dmg.image == value:
+                return dmg
+
+            if dmg.mountpoint == value:
+                return dmg
+
+        return None
+
 class DiskImage(object):
     def __init__(self, config, image, mountpoint, args, description=None):
         self.config = config

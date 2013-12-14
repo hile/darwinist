@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+"""
+Example how to get current address with google maps api and 
+OS/X CoreLocation. 
+
+Please note your OS/X will ask with a dialog if you want to allow
+location access first time, and since we don't wait for location 
+resolving, this most likely this will not show correct address 
+first time you run it.
+"""
+
+import sys
+import time
+import json
+import requests
+import CoreLocation
+
+def error(message):
+    sys.stderr.write('%s\n' % message)
+    sys.exit(1)
+
+API_URL = """http://maps.googleapis.com/maps/api/geocode/json?latlng=%(latitude)s,%(longitude)s&sensor=false"""
+
+lm = CoreLocation.CLLocationManager.alloc().init()
+lm.startUpdatingLocation()
+
+while True:
+    location = lm.location()
+    if location is not None:
+        coordinates = location.coordinate()
+        break
+    print 'Waiting for location...'
+    time.sleep(1)
+
+url = API_URL % { 
+    'latitude': coordinates.latitude,
+    'longitude': coordinates.longitude,
+}
+response = requests.get(url)
+if response.status_code != 200:
+    error('Error querying google maps API')
+try:
+    data = json.loads(response.content)
+    addresses = []
+    for record in data['results']:
+        if 'formatted_address' in record:
+            address = record['formatted_address']
+            if address.count(',') < 2:
+                continue
+            if address not in addresses:
+                addresses.append(address)
+    print '\n'.join(addresses)
+
+except KeyError:
+    error('Could not find formatted_address from JSON response')
+
+lm.stopUpdatingLocation()
+

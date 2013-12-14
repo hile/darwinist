@@ -4,43 +4,64 @@ Attach and detach user configured disk images based on settings, to
 predefined folders with custom parameters.
 """
 
-from systematic.shell import Script
+import os
+from systematic.shell import Script, ScriptCommand
 from darwinist.diskimage import DiskImagesConfig, DiskImage, DiskImageError
 from darwinist.diskutil  import INFO_FIELD_MAP,  INFO_FIELD_ORDER
 
-script = Script()
-script.add_argument('-n', '--names', action='store_true', help='List image names')
-script.add_argument('-l', '--list', action='store_true', help='List images')
-script.add_argument('-i', '--info', action='store_true', help='Show image info')
-script.add_argument('-m', '--attach', action='store_true', help='Attach images')
-script.add_argument('-u', '--detach', action='store_true', help='detach images')
-script.add_argument('images', nargs='*', help='Image names to process')
+script = Script(subcommands=True)
+script.register_subcommand('list', 'list', 'List images')
+script.register_subcommand('names', 'names', 'List image names')
+script.register_subcommand('info', 'info', 'Show image info')
+attach = script.register_subcommand('attach', 'attach', 'Attach images')
+attach.add_argument('images', nargs='*', help='Image names to process')
+detach = script.register_subcommand('detach', 'detach', 'Detach images')
+detach.add_argument('images', nargs='*', help='Image names to process')
 args = script.parse_args()
 
 dmgs = DiskImagesConfig()
-for name in args.images:
-    if name not in dmgs.keys():
-       script.exit(1, 'Invalid image name: %s' % name)
+if 'images' in args:
+    images = []
+    for value in args.images:
+        dmg = dmgs.match(value)
+        if dmg:
+            images.append(dmg)
+    args.images = images
+else:
+    args.images = []
 
 for name, dmg in dmgs.items():
-    if args.images and name not in args.images:
+    if args.images and dmg not in args.images:
         continue
 
-    if args.detach:
+    if args.command == 'names':
+        print name
+
+    if args.command == 'list':
+        script.message('%s: %s on %s: %s' % (
+            name, dmg.image, dmg.mountpoint,
+            dmg.connected and 'attached' or 'not attached'
+        ))
+
+    if args.command == 'detach':
         script.log.debug('Detaching: %s' % dmg.mountpoint)
         try:
             dmg.detach()
         except DiskImageError, emsg:
             print emsg
 
-    elif args.attach:
+    if args.command == 'attach':
+        if not os.path.isfile(dmg.image):
+            script.message('No such file: %s' % dmg.image)
+            continue
+
         script.message('Attaching: %s' % dmg.image)
         try:
             dmg.attach()
         except DiskImageError, emsg:
             script.error(emsg)
 
-    elif args.info:
+    if args.command == 'info':
         info = dmg.info
         script.message(name)
         if dmg.description:
@@ -57,14 +78,4 @@ for name, dmg in dmgs.items():
                 INFO_FIELD_MAP[k]['value'](info[k]),
             ))
 
-    elif args.list:
-        script.message('%s: %s on %s: %s' % (
-            name, dmg.image, dmg.mountpoint,
-            dmg.connected and 'attached' or 'not attached'
-        ))
 
-    elif args.names:
-        script.message(name)
-
-    else:
-        script.usage_error('No operation selected')
