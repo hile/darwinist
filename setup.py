@@ -8,7 +8,7 @@ This module is split from darwinist module to platform dependent tool
 import sys,os,glob
 from setuptools import setup
 
-VERSION='3.2'
+VERSION='4.0.2'
 README = open(os.path.join(os.path.dirname(__file__),'README.md'),'r').read()
 
 setup(
@@ -22,8 +22,14 @@ setup(
     url = 'http://tuohela.net/packages/darwinist',
     license = 'PSF',
     zip_safe = False,
-    packages = ['darwinist'],
     scripts = glob.glob('bin/*'),
-    install_requires = [ 'systematic>=3.2', 'appscript', 'pyfsevents' ],
+    packages = (
+        'darwinist',
+    ),
+    install_requires = (
+        'systematic>=4.0.2',
+        'appscript',
+        'pyfsevents'
+    ),
 )
 

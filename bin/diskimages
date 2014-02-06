@@ -11,7 +11,7 @@ from darwinist.diskutil  import INFO_FIELD_MAP,  INFO_FIELD_ORDER
 
 
 class DMGCommand(ScriptCommand):
-    def run(self, script, args):
+    def run(self, args):
         self.dmgconfig = DiskImagesConfig()
         if 'images' in args and args.images:
             self.match_images(args)
@@ -30,69 +30,69 @@ class DMGCommand(ScriptCommand):
 
 
 class StatusCommand(DMGCommand):
-    def run(self, script, args):
-        DMGCommand.run(self, script, args)
+    def run(self, args):
+        DMGCommand.run(self, args)
         for dmg in self:
-            script.message('%s: %s on %s: %s' % (
+            self.script.message('%s: %s on %s: %s' % (
                 dmg.name, dmg.image, dmg.mountpoint,
                 dmg.connected and 'attached' or 'not attached'
             ))
 
 
 class NamesCommand(DMGCommand):
-    def run(self, script, args):
-        DMGCommand.run(self, script, args)
+    def run(self, args):
+        DMGCommand.run(self, args)
         for dmg in self:
-            script.message(dmg.name)
+            self.script.message(dmg.name)
 
 
 class InfoCommand(DMGCommand):
-    def run(self, script, args):
-        DMGCommand.run(self, script, args)
+    def run(self, args):
+        DMGCommand.run(self, args)
         for dmg in self:
             info = dmg.info
-            script.message(dmg.name)
+            self.script.message(dmg.name)
             if dmg.description:
-                script.message('%14s %s' % ('Description', dmg.description))
+                self.script.message('%14s %s' % ('Description', dmg.description))
 
-            script.message('%14s %s' % ('Image', dmg.image))
+            self.script.message('%14s %s' % ('Image', dmg.image))
 
             if info is None:
-                script.message('Image is not mounted')
+                self.script.message('Image is not mounted')
 
             for k in INFO_FIELD_ORDER:
                 if k not in info.keys():
                     continue
-                script.message('%14s %s' % (
+                self.script.message('%14s %s' % (
                     INFO_FIELD_MAP[k]['name'],
                     INFO_FIELD_MAP[k]['value'](info[k]),
                 ))
 
 
 class AttachCommand(DMGCommand):
-    def run(self, script, args):
-        DMGCommand.run(self, script, args)
+    def run(self, args):
+        DMGCommand.run(self, args)
         for dmg in self:
             if not os.path.isfile(dmg.image):
-                script.message('No such file: %s' % dmg.image)
+                self.script.message('No such file: %s' % dmg.image)
                 continue
 
             if dmg.connected:
-                script.log.debug('Already attached: %s' % dmg.image)
+                self.script.log.debug('Already attached: %s' % dmg.image)
                 continue
 
-            script.message('Attaching: %s' % dmg.image)
+            self.script.message('Attaching: %s' % dmg.image)
             try:
                 dmg.attach()
             except DiskImageError, emsg:
-                script.error(emsg)
+                self.script.error(emsg)
 
 class DetachCommand(DMGCommand):
-    def run(self, script, args):
-        DMGCommand.run(self, script, args)
+    def run(self, args):
+        DMGCommand.run(self, args)
         for dmg in self:
             if not dmg.connected:
-                script.log.debug('Not connected: %s' % dmg.image)
+                self.script.log.debug('Not connected: %s' % dmg.image)
                 continue
 
             try:
