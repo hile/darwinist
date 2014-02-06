@@ -101,18 +101,18 @@ class DetachCommand(DMGCommand):
                 print emsg
 
 script = Script()
-nc = script.register_subcommand(NamesCommand('names', 'List image names'))
+nc = script.add_subcommand(NamesCommand('names', 'List image names'))
 
-ic = script.register_subcommand(InfoCommand('info', 'Show image configuration'))
+ic = script.add_subcommand(InfoCommand('info', 'Show image configuration'))
 ic.add_argument('images', nargs='*', help='Image to show')
 
-sc = script.register_subcommand(StatusCommand('status', 'Show image status'))
+sc = script.add_subcommand(StatusCommand('status', 'Show image status'))
 sc.add_argument('images', nargs='*', help='Image to show')
 
-ac = script.register_subcommand(AttachCommand('attach', 'Attach images'))
+ac = script.add_subcommand(AttachCommand('attach', 'Attach images'))
 ac.add_argument('images', nargs='*', help='Image names to attach')
 
-dc = script.register_subcommand(DetachCommand('detach', 'Detach images'))
+dc = script.add_subcommand(DetachCommand('detach', 'Detach images'))
 dc.add_argument('images', nargs='*', help='Images names to detach')
 
 args = script.parse_args()
