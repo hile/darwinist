@@ -34,7 +34,7 @@ class DiskImagesConfig(dict):
             for arg, value in options.items():
                 if arg not in VALID_CONFIG_ARGS:
                     raise DiskImageError('Invalid option: %s' % arg)
-            self[name] = DiskImage(self, **options)
+            self[name] = DiskImage(self, name, **options)
 
     def keys(self):
         return sorted(dict.keys(self))
@@ -59,8 +59,9 @@ class DiskImagesConfig(dict):
         return None
 
 class DiskImage(object):
-    def __init__(self, config, image, mountpoint, args, description=None):
+    def __init__(self, config, name, image, mountpoint, args, description=None):
         self.config = config
+        self.name = name
         self.image = image
         self.mountpoint = mountpoint
         self.description = description is not None and description or ''
