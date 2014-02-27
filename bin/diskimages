@@ -9,6 +9,8 @@ from systematic.shell import Script, ScriptCommand
 from darwinist.diskimage import DiskImagesConfig, DiskImage, DiskImageError
 from darwinist.diskutil  import INFO_FIELD_MAP,  INFO_FIELD_ORDER
 
+DEFAULT_RETRIES = 3
+
 
 class DMGCommand(ScriptCommand):
     def run(self, args):
@@ -17,6 +19,9 @@ class DMGCommand(ScriptCommand):
             self.match_images(args)
         else:
             self.images = self.dmgconfig.values()
+
+        if 'retries' in args and args.retries < 1:
+            self.script.exit(1, 'Invalid retry count %d' % args.retries)
 
     def match_images(self, args):
         self.images = []
@@ -72,6 +77,7 @@ class InfoCommand(DMGCommand):
 class AttachCommand(DMGCommand):
     def run(self, args):
         DMGCommand.run(self, args)
+
         for dmg in self:
             if not os.path.isfile(dmg.image):
                 self.script.message('No such file: %s' % dmg.image)
@@ -81,11 +87,17 @@ class AttachCommand(DMGCommand):
                 self.script.log.debug('Already attached: %s' % dmg.image)
                 continue
 
-            self.script.message('Attaching: %s' % dmg.image)
-            try:
-                dmg.attach()
-            except DiskImageError, emsg:
-                self.script.error(emsg)
+            retry = 0
+            while retry < args.retries:
+                self.script.message('Attaching: %s' % dmg.image)
+                try:
+                    dmg.attach()
+                    break
+                except DiskImageError, emsg:
+                    if retry >= args.retries:
+                        self.script.error(emsg)
+                    retry += 1
+
 
 class DetachCommand(DMGCommand):
     def run(self, args):
@@ -101,19 +113,20 @@ class DetachCommand(DMGCommand):
                 print emsg
 
 script = Script()
-nc = script.add_subcommand(NamesCommand('names', 'List image names'))
+c = script.add_subcommand(NamesCommand('names', 'List image names'))
 
-ic = script.add_subcommand(InfoCommand('info', 'Show image configuration'))
-ic.add_argument('images', nargs='*', help='Image to show')
+c = script.add_subcommand(InfoCommand('info', 'Show image configuration'))
+c.add_argument('images', nargs='*', help='Image to show')
 
-sc = script.add_subcommand(StatusCommand('status', 'Show image status'))
-sc.add_argument('images', nargs='*', help='Image to show')
+c = script.add_subcommand(StatusCommand('status', 'Show image status'))
+c.add_argument('images', nargs='*', help='Image to show')
 
-ac = script.add_subcommand(AttachCommand('attach', 'Attach images'))
-ac.add_argument('images', nargs='*', help='Image names to attach')
+c = script.add_subcommand(AttachCommand('attach', 'Attach images'))
+c.add_argument('--retries', type=int, default=DEFAULT_RETRIES, help='Retry count')
+c.add_argument('images', nargs='*', help='Image names to attach')
 
-dc = script.add_subcommand(DetachCommand('detach', 'Detach images'))
-dc.add_argument('images', nargs='*', help='Images names to detach')
+c = script.add_subcommand(DetachCommand('detach', 'Detach images'))
+c.add_argument('images', nargs='*', help='Images names to detach')
 
 args = script.parse_args()
 
