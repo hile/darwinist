@@ -4,11 +4,11 @@ Abstraction of filesystem mount points for OS/X
 """
 import os
 import re
-from subprocess import check_output,CalledProcessError
+from subprocess import check_output, CalledProcessError
 from mactypes import Alias
 
-from systematic.filesystems import MountPoint,FileSystemError
-from darwinist.diskutil import DiskInfo,DiskUtilError
+from systematic.filesystems import MountPoint, FileSystemError
+from darwinist.diskutil import DiskInfo, DiskUtilError
 
 re_mountpoint = re.compile(r'([^\s]*) on (.*) \(([^\)]*)\)$')
 re_df = re.compile(r'^([^\s]+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)%\s+(.*)$')
@@ -51,6 +51,7 @@ class MountPoints(dict):
                 else:
                     entry.flags.set(f,True)
             self[entry.path] = entry
+            
 
 class OSXMountPoint(MountPoint):
     """
