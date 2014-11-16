@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-USAGE = """Connect, disconnect or show status of a VPN connection in OS/X.
+USAGE = """Connect, disconnect or show status of a Dialup connection in OS/X.
 
-Can be used for OS/X integrated VPN connections only. VPN will still
+Can be used for OS/X integrated Dialup connections only. Dialup will still
 ask password in a graphical window, if not permanently configured, so you
 can't run this headless remotely.
 
-If you can figure out how to enter the VPN passphrase, please send the info
+If you can figure out how to enter the Dialup passphrase, please send the info
 to hile@iki.fi and I'll update the module and this script to allow entering
 the passwords as well.
 """
@@ -20,10 +20,10 @@ from darwinist.networkprofile import NetworkProfileList
 CONFIG_PATH = os.path.join(os.getenv('HOME'), '.networks.conf')
 
 
-class VPNControlCommand(ScriptCommand):
+class DialupControlCommand(ScriptCommand):
     def __init__(self, *args, **kwargs):
         ScriptCommand.__init__(self, *args, **kwargs)
-        self.linktype = 'vpn'
+        self.linktype = 'dialup'
 
     def parse_args(self, args):
 
@@ -50,7 +50,7 @@ class VPNControlCommand(ScriptCommand):
         return args
 
 
-class ListCommand(VPNControlCommand):
+class ListCommand(DialupControlCommand):
     def run(self, args):
         args = self.parse_args(args)
 
@@ -58,15 +58,15 @@ class ListCommand(VPNControlCommand):
             self.script.message(link.name)
 
 
-class ConnectCommand(VPNControlCommand):
+class ConnectCommand(DialupControlCommand):
     def run(self, args):
         args = self.parse_args(args)
 
         if self.link is None:
-            self.exit(1, 'VPN configuration not found')
+            self.exit(1, 'Dialup configuration not found')
 
         if self.link.connected:
-            self.exit(0, 'VPN already connected')
+            self.exit(0, 'Dialup already connected')
 
         self.link.connect()
         if args.wait:
@@ -79,15 +79,15 @@ class ConnectCommand(VPNControlCommand):
 
             self.exit(1)
 
-class DisconnectCommand(VPNControlCommand):
+class DisconnectCommand(DialupControlCommand):
     def run(self, args):
         args = self.parse_args(args)
 
         if self.link is None:
-            self.exit(1, 'VPN configuration not found')
+            self.exit(1, 'Dialup configuration not found')
 
         if not self.link.connected:
-            self.exit(0, 'VPN not connected.')
+            self.exit(0, 'Dialup not connected.')
 
         self.link.disconnect()
         if args.wait:
@@ -99,12 +99,12 @@ class DisconnectCommand(VPNControlCommand):
 
             self.exit(1)
 
-class StatusCommand(VPNControlCommand):
+class StatusCommand(DialupControlCommand):
     def run(self, args):
         args = self.parse_args(args)
 
         if self.link is None:
-            self.exit(1, 'VPN configuration not found')
+            self.exit(1, 'Dialup configuration not found')
 
         status = self.link.connected
         self.script.message('%s %s %s' % (
@@ -114,12 +114,12 @@ class StatusCommand(VPNControlCommand):
         ))
         self.exit(status==False and 1 or 0)
 
-class WaitCommand(VPNControlCommand):
+class WaitCommand(DialupControlCommand):
     def run(self, args):
         args = self.parse_args(args)
 
         if self.link is None:
-            self.exit(1, 'VPN configuration not found')
+            self.exit(1, 'Dialup configuration not found')
 
         while True:
             if self.link.connected:
@@ -131,18 +131,18 @@ class WaitCommand(VPNControlCommand):
 script = Script(description=USAGE)
 c = script.add_subcommand(ListCommand('list', 'List connections'))
 
-c = script.add_subcommand(DisconnectCommand('disconnect', 'Disconnect VPN'))
+c = script.add_subcommand(DisconnectCommand('disconnect', 'Disconnect Dialup'))
 c.add_argument('-w', '--wait', action='store_true', help='Wait for connect/disconnect')
 c.add_argument('name', help='Connection name')
 
-c = script.add_subcommand(ConnectCommand('connect', 'Connect VPN'))
+c = script.add_subcommand(ConnectCommand('connect', 'Connect Dialup'))
 c.add_argument('-w', '--wait', action='store_true', help='Wait for connect/disconnect')
 c.add_argument('name', help='Connection name')
 
-c = script.add_subcommand(StatusCommand('status', 'Status of VPN connection'))
+c = script.add_subcommand(StatusCommand('status', 'Status of Dialup connection'))
 c.add_argument('name', help='Connection name')
 
-c = script.add_subcommand(WaitCommand('wait', 'Wait for VPN connection'))
+c = script.add_subcommand(WaitCommand('wait', 'Wait for Dialup connection'))
 c.add_argument('name', help='Connection name')
 
 args = script.parse_args()
