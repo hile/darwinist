@@ -133,17 +133,17 @@ c = script.add_subcommand(ListCommand('list', 'List connections'))
 
 c = script.add_subcommand(DisconnectCommand('disconnect', 'Disconnect Dialup'))
 c.add_argument('-w', '--wait', action='store_true', help='Wait for connect/disconnect')
-c.add_argument('name', help='Connection name')
+c.add_argument('name', nargs='?', help='Connection name')
 
 c = script.add_subcommand(ConnectCommand('connect', 'Connect Dialup'))
 c.add_argument('-w', '--wait', action='store_true', help='Wait for connect/disconnect')
-c.add_argument('name', help='Connection name')
+c.add_argument('name', nargs='?', help='Connection name')
 
 c = script.add_subcommand(StatusCommand('status', 'Status of Dialup connection'))
-c.add_argument('name', help='Connection name')
+c.add_argument('name', nargs='?', help='Connection name')
 
 c = script.add_subcommand(WaitCommand('wait', 'Wait for Dialup connection'))
-c.add_argument('name', help='Connection name')
+c.add_argument('name', nargs='?', help='Connection name')
 
 args = script.parse_args()
 
