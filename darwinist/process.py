@@ -70,6 +70,17 @@ class ProcessList(list):
             self
         )
 
+    def find_pid(self, pid):
+        try:
+            pid = int(pid)
+        except ValueError:
+            raise ValueError('Invalid PID: %s' % value)
+        for process in self:
+            if process['pid'] == pid:
+                return process
+        return None
+
+
 class Process(dict):
     """
     Wrapper class for information for one process
