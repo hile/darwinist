@@ -5,10 +5,10 @@ Scripts and system tool wrappers for OS/X
 This module is split from darwinist module to platform dependent tool
 """
 
-import sys,os,glob
-from setuptools import setup
+import glob
+from setuptools import setup, find_packages
 
-VERSION='4.1.0'
+VERSION='4.1.1'
 
 setup(
     name = 'darwinist',
@@ -17,12 +17,10 @@ setup(
     author = 'Ilkka Tuohela',
     author_email = 'hile@iki.fi',
     version = VERSION,
-    url = 'http://tuohela.net/packages/darwinist',
+    url = 'https://github.com/hile/darwinist',
     license = 'PSF',
     scripts = glob.glob('bin/*'),
-    packages = (
-        'darwinist',
-    ),
+    packages = find_packages(),
     install_requires = (
         'systematic>=4.0.2',
         'appscript',
