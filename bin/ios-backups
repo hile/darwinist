@@ -31,7 +31,7 @@ class ListBackupsCommand(IOSBackupCommand):
     def run(self, args):
         args = self.parse_args(args)
 
-        for device in self.device:
+        for device in self.backups:
             self.message('%s updated on %s' % (device.device_name, device.updated))
 
 
