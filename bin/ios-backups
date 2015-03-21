@@ -1,0 +1,112 @@
+#!/usr/bin/env python
+
+import json
+import sys
+
+from darwinist.ios.backup import IOSDeviceBackups, IOSBackupError
+from systematic.shell import Script, ScriptCommand
+
+TIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
+
+class IOSBackupCommand(ScriptCommand):
+    def parse_args(self, args):
+        try:
+            self.backups = IOSDeviceBackups()
+        except IOSBackupError, emsg:
+            self.exit(1, emsg)
+
+        if 'names' in args and args.names:
+            args.names = [v for n in args.names for v in n.split(',')]
+
+        return args
+
+    def filter_devices_by_name(self, args):
+        if 'names' not in args or not args.names:
+            return [device for device in self.backups]
+
+        return [device for device in self.backups if device.device_name in args.names]
+
+
+class ListBackupsCommand(IOSBackupCommand):
+    def run(self, args):
+        args = self.parse_args(args)
+
+        for device in self.device:
+            self.message('%s updated on %s' % (device.device_name, device.updated))
+
+
+class CheckDatabasesCommand(IOSBackupCommand):
+    def run(self, args):
+        args = self.parse_args(args)
+
+        for device in self.filter_devices_by_name(args):
+            self.message('Checking %s' % device)
+            for key in ( 'sms', 'addressbook', 'notes', 'calendar', 'calls', ):
+                db = getattr(device, key)
+                if db.exists and db.readable:
+                    self.message('  %s OK' % db.name)
+                else:
+                    self.message('  %s MISSING OR UNREADABLE' % db.name)
+
+class DumpSMSCommand(IOSBackupCommand):
+    def output_chat(self, fd, chat):
+        for message in chat.messages:
+            fd.write('%s %s %s\n' % (message.date, message.sender, message.text))
+        fd.flush()
+
+    def run(self, args):
+        args = self.parse_args(args)
+
+        for device in self.filter_devices_by_name(args):
+            if not device.sms.exists:
+                self.exit(2, 'No SMS backup for %s' % device.device_name)
+
+            if args.output_file:
+                try:
+                    fd = open(args.output_file, 'wb')
+                except OSError, (ecode, emsg):
+                    self.exit(1, 'Error opening %s for writing: %s' % (args.output_file, emsg))
+                except IOError, (ecode, emsg):
+                    self.exit(1, 'Error opening %s for writing: %s' % (args.output_file, emsg))
+
+            else:
+                fd = sys.stdout
+
+            if args.json:
+                data = {
+                    'device': device.device_name,
+                    'chats': []
+                }
+                for chat in device.sms.chats:
+                    data['chats'].append({
+                        'first': chat.first.date.strftime(TIME_FORMAT),
+                        'last': chat.latest.date.strftime(TIME_FORMAT),
+                        'messages': [
+                            {
+                                'date': message.date.strftime(TIME_FORMAT),
+                                'sender': '%s' % message.sender,
+                                'text': message.text,
+                            }
+                            for message in chat.messages
+                        ]
+                    })
+                fd.write(json.dumps(data, indent=2))
+            else:
+                for chat in device.sms.chats:
+                    self.output_chat(fd, chat)
+
+
+script = Script()
+c = script.add_subcommand(ListBackupsCommand('list', 'List iOS device backups'))
+
+c = script.add_subcommand(CheckDatabasesCommand('check', 'Check iOS device backup databases'))
+c.add_argument('names', nargs='*', help='Device names to check')
+
+c = script.add_subcommand(DumpSMSCommand('dump-sms', 'Dump SMS messages from iOS device backup'))
+c.add_argument('-j', '--json', action='store_true', help='Output JSON')
+c.add_argument('-o', '--output-file', help='Output file')
+c.add_argument('names', nargs='*', help='Device names to check')
+
+
+args = script.parse_args()
+
