@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 OS/X implementation of the systematic VLAN management API
 """
@@ -15,8 +14,8 @@ VLANLIST_LINE_MAP = {
 }
 
 class VLANError(Exception):
-    def __str__(self):
-        return self.args[0]
+    pass
+
 
 class VLAN(object):
     def __init__(self):
@@ -24,15 +23,15 @@ class VLAN(object):
             setattr(self, k, 'NOT SET')
 
     def __repr__(self):
-        return '%s TAG %s PARENT %s' % (self.port, self.tag, self.parent)
+        return '{0} TAG {1} PARENT {2}'.format(self.port, self.tag, self.parent)
 
     def create(self, name, parent, tag):
         cmd = ['networksetup', '-createVLAN', name, parent, str(tag)]
         p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        (stdout, stderr) = p.communicate()
-        if p.returncode!=0:
+        stdout, stderr = p.communicate()
+        if p.returncode != 0:
             print stdout
-            raise VLANError('ERROR creating VLAN %s' % tag)
+            raise VLANError('ERROR creating VLAN {0}'.format(tag))
 
         self.name = name
         self.parent = parent
@@ -42,16 +41,17 @@ class VLAN(object):
         cmd = ['networksetup', '-deleteVLAN', self.name, self.parent, str(self.tag)]
         p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         (stdout, stderr) = p.communicate()
-        if p.returncode!=0:
+        if p.returncode != 0:
             print stdout
-            raise VLANError('ERROR removing VLAN %s' % self.tag)
+            raise VLANError('ERROR removing VLAN {0}'.format(self.tag))
 
 class VLANList(list):
     def __init__(self):
         cmd = ['networksetup', '-listVLANs']
         p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        (stdout, stderr) = p.communicate()
-        lines = stdout.split('\n')
+
+        stdout, stderr = p.communicate()
+        lines = stdout.splitlines()
         if lines[0] == NO_VLANS_MESSAGE:
             return
 

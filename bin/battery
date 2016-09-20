@@ -15,5 +15,5 @@ for battery in batteries:
     print battery
     if args.verbose:
         for k, v in battery.items():
-            print '%26s %s' % (k, v)
+            print '{0:26} {1}'.format(k, v)
 

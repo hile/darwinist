@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Wrapper to call the networksetup command line script.
 """
@@ -18,8 +17,8 @@ class NetworkSetupError(Exception):
     """
     Exceptions raised while parsing OS/X network setup
     """
-    def __str__(self):
-        return self.args[0]
+    pass
+
 
 class NetworkSetup(object):
     """
@@ -27,19 +26,19 @@ class NetworkSetup(object):
     """
     def __init__(self):
         if not os.path.isfile(CMD):
-            raise NetworkSetupError('No such file: %s' % CMD)
+            raise NetworkSetupError('No such file: {0}'.format(CMD))
         if not os.access(CMD,os.X_OK):
-            raise NetworkSetupError('No permission to execute: %s' % CMD)
+            raise NetworkSetupError('No permission to execute: {0}'.format(CMD))
 
         self.network_services = [NetworkService(n) for n in filter(
                 lambda x: x!='',
                 check_output(
                     ['networksetup','-listallnetworkservices']
-                ).split('\n')[1:]
+                ).splitlines()[1:]
             )]
 
     def __getattr__(self,attr):
-        raise AttributeError('No such NetworkSetup attribute: %s' % attr)
+        raise AttributeError('No such NetworkSetup attribute: {0}'.format(attr))
 
 class NetworkService(object):
     """
@@ -59,7 +58,7 @@ class NetworkService(object):
         try:
             out = filter(lambda x: x!='', check_output(
                 ['networksetup','-getinfo',self.name]
-            ).split('\n'))
+            ).splitlines())
         except CalledProcessError:
             return details
 
@@ -67,6 +66,7 @@ class NetworkService(object):
             if l == 'Manual Configuration':
                 details['ipv4_mode'] = 'manual'
                 continue
+
             if l == 'DHCP Configuration':
                 details['ipv4_mode'] = 'dhcp'
                 continue
@@ -74,12 +74,14 @@ class NetworkService(object):
             try:
                 (key,value) = [x.strip() for x in l.split(':',1)]
             except ValueError:
-                raise ValueError('Error parsing line: %s' % l)
+                raise ValueError('Error parsing line: {0}'.format(l))
 
             if value == 'none':
                 value = None
+
             if key in ['Subnet mask','IP address','Router']:
                 value = IPv4Address(value)
+
             if key == 'Ethernet Address':
                 value = EthernetMACAddress(value)
 
@@ -113,30 +115,30 @@ class NetworkService(object):
     def mac_address(self):
         return self.__parse_mac_address()
 
-    def set_mode(self,mode,client_id=None,ipaddress=None,netmask=None,router=None):
+    def set_mode(self, mode, client_id=None, ipaddress=None, netmask=None, router=None):
         """
         Set interface mode to given value. Each mode has it's specific allowed flags,
         see OS/X documentation or source code of this module.
 
         Mode can be: dhcp, manual or bootp
         """
-        if mode not in ['dhcp','manual','bootp']:
+        if mode not in [ 'dhcp', 'manual', 'bootp']:
             raise ValueError('Invalid IPv4 configuratio mode')
 
         if mode == 'bootp':
             try:
-                check_output(['networksetup','-setbootp',self.name])
+                check_output(['networksetup', '-setbootp', self.name])
             except CalledProcessError:
-                raise NetworkSetupError('Error setting %s to BOOTP mode' % self.name)
+                raise NetworkSetupError('Error setting {0} to BOOTP mode'.format(self.name))
 
         elif mode == 'dhcp':
-            cmd = ['networksetup','-setdhcp',self.name]
+            cmd = ['networksetup', '-setdhcp', self.name]
             if client_id is not None:
                 cmd.append(client_id)
             try:
                 check_output(cmd)
             except CalledProcessError:
-                raise NetworkSetupError('Error setting %s to DHCP mode' % self.name)
+                raise NetworkSetupError('Error setting {0} to DHCP mode'.format(self.name))
 
         elif mode == 'manual':
             if ipaddress is None:
@@ -145,7 +147,7 @@ class NetworkService(object):
                 try:
                     ipaddress = IPv4Address(ipaddress)
                 except ValueError:
-                    raise NetworkSetupError('Invalid IPv4 Address: %s' % ipaddress)
+                    raise NetworkSetupError('Invalid IPv4 Address: {0}'.format(ipaddress))
 
             if netmask is None:
                 raise NetworkSetupError('Manual mode requires valid netmask')
@@ -153,7 +155,7 @@ class NetworkService(object):
                 try:
                     netmask = IPv4Address(netmask)
                 except ValueError:
-                    raise NetworkSetupError('Invalid IPv4 Address: %s' % netmask)
+                    raise NetworkSetupError('Invalid IPv4 netmask: {0}'.format(netmask))
 
             if router is None:
                 raise NetworkSetupError('Manual mode requires valid router')
@@ -161,9 +163,9 @@ class NetworkService(object):
                 try:
                     router = IPv4Address(router)
                 except ValueError:
-                    raise NetworkSetupError('Invalid IPv4 Address: %s' % router)
+                    raise NetworkSetupError('Invalid IPv4 Address: {0}'.format(router))
 
-            cmd = ['networksetup','-setmanual',self.name,
+            cmd = ['networksetup', '-setmanual', self.name,
                 ipaddress.ipaddress,
                 netmask.ipaddress,
                 router.ipaddress
@@ -172,4 +174,4 @@ class NetworkService(object):
             try:
                 return check_output(cmd)
             except CalledProcessError:
-                raise NetworkSetupError('Error setting %s to manual mode' % self.name)
+                raise NetworkSetupError('Error setting {0} to manual mode'.format(self.name))

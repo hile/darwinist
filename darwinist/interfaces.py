@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Parse and list network interfaces on the system
 """
@@ -19,19 +18,22 @@ RE_INET6_LINE = [
 class NetworkInterfaces(list):
     def __init__(self):
         p = Popen(['/sbin/ifconfig'], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        (stdout, stderr) = p.communicate()
+        stdout, stderr = p.communicate()
 
         interface = None
         for l in [x.rstrip() for x in stdout.split('\n')]:
             if l.strip()=='':
                 continue
+
             if l.startswith('	'):
                 interface.parse(l)
+
             else:
                 name, flags = l.split(':', 1)
                 if interface:
                     self.append(interface)
                 interface = Interface(name, flags)
+
 
 class Interface(dict):
     def __init__(self, name, flags=''):
@@ -55,6 +57,7 @@ class Interface(dict):
                     data['broadcast'] = IPv4Address(data['broadcast'])
                 else:
                     data['broadcast'] = None
+
                 self['addresses'].append(data)
                 return
 
@@ -66,6 +69,7 @@ class Interface(dict):
                 data['address'] = IPv6Address(data['address'])
                 if 'prefix' in data:
                     data['prefix'] = int(data['prefix'])
+
                 self['addresses'].append(data)
                 return
 
@@ -78,6 +82,6 @@ class Interface(dict):
             try:
                 key, value = line.strip().split('=', 1)
             except ValueError:
-                print 'Error splitting line %s' % line
+                print 'Error splitting line {0}'.format(line)
 
         self[key] = value

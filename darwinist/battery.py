@@ -1,16 +1,15 @@
-#!/usr/bin/env python
 """
 Wrapper to get OS/X darwin laptop battery status from command line
 """
 
 from darwinist.ioreg import IORegTree, IORegError
 
-BATTERY_IGNORE_FIELDS = [
+BATTERY_IGNORE_FIELDS = (
     'CellVoltage',
     'IOGeneralInterest',
     'LegacyBatteryInfo',
     'ManufacturerData',
-]
+)
 
 BATTERY_FIELD_FORMATS = {
     'AdapterInfo': lambda x: int(x),
@@ -38,9 +37,9 @@ BATTERY_FIELD_FORMATS = {
     'PermanentFailureStatus': lambda x: int(x),
     'PostChargeWaitSeconds': lambda x: int(x),
     'PostDischargeWaitSeconds': lambda x: int(x),
-    'Temperature': lambda x: float(x)/100,
+    'Temperature': lambda x: float(x) / 100,
     'TimeRemaining': lambda x: int(x),
-    'Voltage': lambda x: float(x)/1000,
+    'Voltage': lambda x: float(x) / 1000,
 }
 
 class Batteries(list):
@@ -48,25 +47,27 @@ class Batteries(list):
     All connected OS/X computer batteries based on ioreg data
     """
     def __init__(self):
-        list.__init__(self)
         ioreg_data = IORegTree('AppleSmartBattery')
         for ioreg_group in ioreg_data:
             self.append(Battery(ioreg_group))
 
-class Battery(dict):
-    def __init__(self, details={}):
-        for k, v in details.items():
-            if k in BATTERY_IGNORE_FIELDS:
-                continue
-            if k in BATTERY_FIELD_FORMATS.keys():
-                self[k.lower()] = BATTERY_FIELD_FORMATS[k](v.value)
-            else:
-                self[k.lower()] = v.value
 
-        if self.has_key('currentcapacity') and self.has_key('maxcapacity'):
-            self['percent'] = int(
-                round(float(self.currentcapacity)/self.maxcapacity*100)
-            )
+class Battery(dict):
+    """Battery details
+
+    """
+    def __init__(self, details={}):
+        for key, value in details.items():
+            if key in BATTERY_IGNORE_FIELDS:
+                continue
+
+            if key in BATTERY_FIELD_FORMATS.keys():
+                self[key.lower()] = BATTERY_FIELD_FORMATS[key](value.value)
+            else:
+                self[key.lower()] = value.value
+
+        if 'currentcapacity' in self and 'maxcapacity' in self:
+            self['percent'] = int(round(float(self.currentcapacity) / self.maxcapacity * 100))
         else:
             self['percent'] = 'UNKNOWN'
 
@@ -74,7 +75,23 @@ class Battery(dict):
         try:
             return self[attr.lower()]
         except KeyError:
-            raise AttributeError('No such Battery attribute: %s' % attr)
+            raise AttributeError('No such Battery attribute: {0}'.format(attr))
+
+    def __repr__(self):
+        if self.ischarging:
+            prefix = 'CHARGING'
+        elif self.fullycharged:
+            prefix = 'FULL'
+        else:
+            prefix = 'DISCHARGING'
+        return '{0} {1} {2:d}% {3:d}/{4:d} mAh {5:d} cycles'.format(
+            self.devicename,
+            prefix,
+            self.percent,
+            self.currentcapacity,
+            self.maxcapacity,
+            self.cyclecount,
+        )
 
     def keys(self):
         return sorted(dict.keys(self))
@@ -84,19 +101,3 @@ class Battery(dict):
 
     def values(self):
         return [self[k] for k in self.keys()]
-
-    def __repr__(self):
-        if self.ischarging:
-            prefix = 'CHARGING'
-        elif self.fullycharged:
-            prefix = 'FULL'
-        else:
-            prefix = 'DISCHARGING'
-        return '%s %s %d%% %d/%d mAh %d cycles' % (
-            self.devicename,
-            prefix,
-            self.percent,
-            self.currentcapacity,
-            self.maxcapacity,
-            self.cyclecount,
-        )

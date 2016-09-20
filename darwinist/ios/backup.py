@@ -1,3 +1,6 @@
+"""
+IOS mobile backups parser
+"""
 
 import os
 import plistlib
@@ -5,6 +8,7 @@ import sqlite3
 
 from datetime import datetime, timedelta
 from subprocess import Popen, PIPE
+from xml.parsers.expat import ExpatError
 
 # Path of mobile backups on OS/X
 BACKUP_PATH = os.path.expanduser('~/Library/Application Support/MobileSync/Backup')
@@ -81,10 +85,10 @@ class SortedContainer(object):
 
 
 class Handle(SortedContainer):
-    compare_fields = ('country', 'service', 'id', 'number')
+    compare_fields = ( 'country', 'service', 'id', 'number', )
 
     def __init__(self, database, handle_id, country, service, number):
-        SortedContainer.__init__(self)
+        super(Handle, self).__init__()
 
         self.id = int(handle_id)
         self.country = country
@@ -99,7 +103,7 @@ class Message(SortedContainer):
     compare_fields = ('database', 'date', )
 
     def __init__(self, database, message_id, sender_handle_id, date, subject, text, is_from_me):
-        SortedContainer.__init__(self)
+        super(Message, self).__init__()
 
         self.database = database
         self.id = message_id
@@ -220,11 +224,12 @@ class ContactProperty(object):
         except KeyError:
             return self.label
 
+
 class Contact(SortedContainer):
-    compare_fields = ( 'last', 'middle', 'first',)
+    compare_fields = ( 'last', 'middle', 'first', )
 
     def __init__(self, database, contact_id, first, last, middle):
-        SortedContainer.__init__(self)
+        super(Contact, self).__init__()
 
         self.database = database
         self.id = contact_id
@@ -260,7 +265,7 @@ class AddressbookDatabase(IOSDatabaseBackup):
     db_hash = '31bb7ba8914766d4ba40d6dfb6113c8b614be442'
 
     def __init__(self, backup):
-        IOSDatabaseBackup.__init__(self, backup)
+        super(AddressbookDatabase, self).__init__(backup)
 
     @property
     def contacts(self):
@@ -312,6 +317,7 @@ class CallsDatabase(IOSDatabaseBackup):
 class IOSBackup(object):
     def __init__(self, path):
         self.path = path
+
         self.sms = SMSDatabase(self)
         self.addressbook = AddressbookDatabase(self)
         self.notes = NotesDatabase(self)
@@ -323,9 +329,22 @@ class IOSBackup(object):
     def __repr__(self):
         return '%s (updated %s)' % (self.device_name, self.updated)
 
+    def __read_binary_plist__(self, path):
+        p = Popen(['plutil', '-convert', 'xml1', '-o', '-', path], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
+        return plistlib.readPlistFromString(stdout)
+
     @property
     def device_name(self):
-        plist = self.__read_binary_plist__(os.path.join(self.path, '13fcec800c483aa9cc21b0f0e731757ac0f2dea9'))
+        path = os.path.join(self.path, '13fcec800c483aa9cc21b0f0e731757ac0f2dea9')
+        if not os.path.isfile(path):
+            raise IOSBackupError('No such file: {0}'.format(path))
+
+        try:
+            plist = self.__read_binary_plist__(path)
+        except ExpatError, emsg:
+            raise IOSBackupError('Error reading {0}: {1}'.format(path, emsg))
+
         try:
             return plist['UserAssignedDeviceName']
         except KeyError:
@@ -342,11 +361,6 @@ class IOSBackup(object):
     def id(self):
         return os.path.basename(self.path)
 
-    def __read_binary_plist__(self, path):
-        p = Popen(['plutil', '-convert', 'xml1', '-o', '-', path], stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = p.communicate()
-        return plistlib.readPlistFromString(stdout)
-
 
 class IOSDeviceBackups(list):
     def __init__(self, path=BACKUP_PATH):
@@ -361,18 +375,3 @@ class IOSDeviceBackups(list):
         for path in paths:
             self.append(IOSBackup(path))
 
-
-if __name__ == '__main__':
-    backups = IOSDeviceBackups()
-    for backup in backups:
-        print backup
-
-        for key in ( 'sms', 'addressbook', 'notes', 'calendar', 'calls', ):
-            db = getattr(backup, key)
-            if db.exists and db.readable:
-                print db.name, 'OK'
-            else:
-                print db.name, 'MISSING OR UNREADABLE'
-
-        for contact in backup.addressbook.contacts:
-            print contact

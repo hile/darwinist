@@ -1,14 +1,7 @@
-#!/usr/bin/env python
-"""
-Scripts and system tool wrappers for OS/X
-
-This module is split from darwinist module to platform dependent tool
-"""
 
 import glob
 from setuptools import setup, find_packages
-
-VERSION='4.1.1'
+from darwinist import __version__
 
 setup(
     name = 'darwinist',
@@ -16,15 +9,16 @@ setup(
     description = 'Sysadmin utility modules and scripts for OS/X',
     author = 'Ilkka Tuohela',
     author_email = 'hile@iki.fi',
-    version = VERSION,
+    version = __version__,
     url = 'https://github.com/hile/darwinist',
     license = 'PSF',
     scripts = glob.glob('bin/*'),
     packages = find_packages(),
     install_requires = (
-        'systematic>=4.0.2',
+        'systematic>=4.4.8',
         'appscript',
-        'pyfsevents'
+        'pyfsevents',
+        'pyobjc',
     ),
 )
 

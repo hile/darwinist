@@ -1,6 +1,5 @@
-#!/usr/bin/env python
 """
-OS/X application bundle processing tools
+OS/X application bundles
 """
 
 import os
@@ -18,19 +17,21 @@ INFO_BUNDLE_NAME_MAP = {
 class ApplicationError(Exception):
     pass
 
+
 class Application(object):
     """
-    Class to represent OS/X application bundles (.app)
+    Class to parse OS/X application bundle (.app) directory
     """
-    def __init__(self,path):
+
+    def __init__(self, path):
         self.path = path
         self.__cached_info = None
 
         if not os.path.isdir(path):
-            raise ApplicationError('No such directory: %s' % self.path)
+            raise ApplicationError('No such directory: {0}'.format(self.path))
 
         if os.path.splitext(os.path.realpath(path))[1] != '.app':
-            raise ApplicationError('Not an application bundle: %s' % path)
+            raise ApplicationError('Not an application bundle: {0}'.format(path))
 
     def __repr__(self):
         return self.path
@@ -45,8 +46,8 @@ class Application(object):
     def version(self):
         info = self.info
 
-        for k in ('version', 'short_version'):
-            value = getattr(info,k)
+        for key in ( 'version', 'short_version', ):
+            value = getattr(info, key)
             if value is not None:
                 return value
 
@@ -56,19 +57,20 @@ class ApplicationInfo(dict):
     """
     Information for an application, as dictionary
     """
-    def __init__(self,application):
-        self.path = os.path.join(application.path,'Contents','Info.plist')
+
+    def __init__(self, application):
+        self.path = os.path.join(application.path, 'Contents', 'Info.plist')
 
         if not os.path.isfile(self.path):
-            raise ApplicationError('No such file: %s' % self.path)
+            raise ApplicationError('No such file: {0}'.format(self.path))
 
         try:
             self.update(plistlib.readPlist(self.path).items())
         except ExpatError,emsg:
-            raise ApplicationError('Error parsing %s: %s' % (self.path,emsg))
+            raise ApplicationError('Error parsing {0}: {1}'.format(self.path, emsg))
 
     def __repr__(self):
-        return unicode('%s %s' % (self.name,self.version))
+        return unicode('{0} {1}'.format(self.name, self.version))
 
     def __getattr__(self,attr):
         if attr in INFO_BUNDLE_NAME_MAP.keys():
@@ -79,14 +81,15 @@ class ApplicationInfo(dict):
         except KeyError:
             return None
 
+
 class ApplicationTree(list):
     """
     Tree of OS/X applications (.app directory bundles)
     """
-    def __init__(self,path='/Applications',max_depth=2):
+
+    def __init__(self, path='/Applications', max_depth=2):
         self.path = path
         self.max_depth = max_depth
-
         self.update()
 
     def update(self):
@@ -94,7 +97,7 @@ class ApplicationTree(list):
         Update application tree recursively with load_tree()
         """
 
-        def load_tree(path,depth=0):
+        def load_tree(path, depth=0):
             """
             Load tree items from given path
             """
@@ -102,19 +105,19 @@ class ApplicationTree(list):
                 return []
 
             apps = []
-            for s in sorted(os.path.join(path,d) for d in os.listdir(path)):
+            for s in sorted(os.path.join(path, d) for d in os.listdir(path)):
                 if not os.path.isdir(s):
                     continue
 
                 if os.path.splitext(s)[1][1:] == 'app':
                     apps.append(Application(s))
                 else:
-                    apps.extend(load_tree(s,depth=depth+1))
+                    apps.extend(load_tree(s, depth=depth+1))
 
             return apps
 
         if not os.path.isdir(self.path):
             return
 
-        list.__delslice__(self,0,len(self))
+        self.__delslice__(0, len(self))
         self.extend(load_tree(self.path))

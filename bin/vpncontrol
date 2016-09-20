@@ -35,9 +35,9 @@ class VPNControlCommand(ScriptCommand):
             try:
                 self.link = self.profile[args.name]
                 if self.link not in self.links:
-                    self.exit(255, 'Not a %s link: %s' % (self.linktype, args.name))
+                    self.exit(255, 'Not a {0} link: {1}'.format(self.linktype, args.name))
             except KeyError:
-                self.exit(255, 'No such %s link: %s' % (self.linktype, args.name))
+                self.exit(255, 'No such {0} link: {1}'.format(self.linktype, args.name))
 
         else:
             if self.profile.config.has_key(self.linktype):
@@ -45,7 +45,7 @@ class VPNControlCommand(ScriptCommand):
                 try:
                     self.link = self.profile[default]
                 except KeyError:
-                    self.exit(1, 'Default %s link %s not found' % (self.linktype, default))
+                    self.exit(1, 'Default {0} link {1} not found'.format(self.linktype, default))
 
         return args
 
@@ -70,7 +70,7 @@ class ConnectCommand(VPNControlCommand):
 
         self.link.connect()
         if args.wait:
-            self.log.info('Waiting for %s to connect...' % self.name)
+            self.log.info('Waiting for {0} to connect...'.format(self.name))
 
             while True:
                 if self.link.connected:
@@ -91,7 +91,7 @@ class DisconnectCommand(VPNControlCommand):
 
         self.link.disconnect()
         if args.wait:
-            script.log.info('Waiting for %s to disconnect...' % self.name)
+            script.log.info('Waiting for {0} to disconnect...'.format(self.name))
             while True:
                 if not self.link.connected:
                     self.exit(0)
@@ -107,7 +107,7 @@ class StatusCommand(VPNControlCommand):
             self.exit(1, 'VPN configuration not found')
 
         status = self.link.connected
-        self.script.message('%s %s %s' % (
+        self.script.message('{0} {1} {2}'.format(
             self.link.name,
             self.linktype,
             status and 'is connected' or 'is not connected'

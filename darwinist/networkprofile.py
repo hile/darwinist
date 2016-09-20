@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Control and see status of OS/X network interfaces from python.
 """
@@ -18,7 +17,8 @@ NETWORK_CONNECTION_TYPES = {
 }
 
 
-class NetworkConfigError(Exception): pass
+class NetworkConfigError(Exception):
+    pass
 
 
 class NetworkProfileList(object):
@@ -32,8 +32,8 @@ class NetworkProfileList(object):
             self.app = appscript.app('System Events')
             self.location = self.app.network_preferences.get().current_location.get()
 
-        except appscript.reference.CommandError,e:
-            raise NetworkConfigError('Appscript initialization error: %s' % e.errormessage)
+        except appscript.reference.CommandError,emsg:
+            raise NetworkConfigError('Appscript initialization error: {0}'.format(emsg.errormessage))
 
     def __read_config__(self, config):
         if not os.path.isfile(config):
@@ -46,13 +46,13 @@ class NetworkProfileList(object):
             self.location.services.get()
         )
         if not names:
-            raise KeyError('No such connection: %s' % item)
+            raise KeyError('No such connection: {0}'.format(item))
 
         try:
             return NetworkConnection(item, profiles=self)
 
         except appscript.reference.CommandError:
-            raise KeyError('No such network service configured: %s' % item)
+            raise KeyError('No such network service configured: {0}'.format(item))
 
     def keys(self):
         """
@@ -83,7 +83,7 @@ class NetworkProfileList(object):
             try:
                 connection_types = NETWORK_CONNECTION_TYPES[connection_type]
             except KeyError:
-                raise NetworkConfigError('Unknown connection type: %s' % connection_type)
+                raise NetworkConfigError('Unknown connection type: {0}'.format(connection_type))
 
         if not isinstance(connection_types, list):
             connection_types = [connection_types]
@@ -107,7 +107,7 @@ class NetworkConnection(object):
 
         names = filter(lambda s: s.name.get() == name, profiles.location.services.get())
         if not len(names):
-            raise NetworkConfigError('No such connection: %s' % name)
+            raise NetworkConfigError('No such connection: {0}'.format(name))
 
         try:
             self.connection = profiles.location.services[name].get()
@@ -126,29 +126,11 @@ class NetworkConnection(object):
 
         return 0
 
-    def __eq__(self, other):
-        return self.__cmp__(other) == 0
-
-    def __eq__(self, other):
-        return self.__cmp__(other) != 0
-
-    def __lt__(self, other):
-        return self.__cmp__(other) < 0
-
-    def __le__(self, other):
-        return self.__cmp__(other) <= 0
-
-    def __gt__(self, other):
-        return self.__cmp__(other) > 0
-
-    def __ge__(self, other):
-        return self.__cmp__(other) >= 0
-
     def __hash__(self):
-        return '%s %s' % (self.connection_type, self.name)
+        return '{0} {1}'.format(self.connection_type, self.name)
 
     def __repr__(self):
-        return '%s %s: %s' % (
+        return '{0} {1}: {2}'.format(
             self.connection_type,
             self.name,
             self.connected and 'connected' or 'not connected'
@@ -160,7 +142,7 @@ class NetworkConnection(object):
             return getattr(interface,item).get()
 
         except appscript.reference.CommandError:
-            raise AttributeError('Value %s not available for interface %s' % (item, self.name))
+            raise AttributeError('Value {0} not available for interface {1}'.format(item, self.name))
 
     @property
     def mac(self):
@@ -176,7 +158,7 @@ class NetworkConnection(object):
             return self.connection.kind.get()
 
         except appscript.reference.CommandError:
-            raise NetworkConfigError('Error getting service type for %s' % self.name)
+            raise NetworkConfigError('Error getting service type for {0}'.format(self.name))
 
     @property
     def connection_type(self):
@@ -202,7 +184,7 @@ class NetworkConnection(object):
         the passphrase with appscript.
         """
         if self.connected:
-            raise NetworkConfigError('Already connected: %s' % self.name)
+            raise NetworkConfigError('Already connected: {0}'.format(self.name))
 
         self.app.connect(self.connection)
 
@@ -211,7 +193,7 @@ class NetworkConnection(object):
         Disconnect the network interface
         """
         if not self.connected:
-            raise NetworkConfigError('Not connected: %s' % self.name)
+            raise NetworkConfigError('Not connected: {0}'.format(self.name))
 
         self.app.disconnect(self.connection)
 

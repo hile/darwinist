@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Abstraction of AppleScript system events class for python
 """
@@ -36,6 +35,7 @@ class SystemEventsError(Exception):
     """
     pass
 
+
 class OSXUserAccounts(dict):
     """
     List of user accounts from appscript system events
@@ -43,8 +43,8 @@ class OSXUserAccounts(dict):
     def __init__(self):
         try:
             self.app = appscript.app('System Events')
-        except appscript.reference.CommandError, e:
-            raise SystemEventsError('Appscript initialization error: %s' % e.errormessage)
+        except appscript.reference.CommandError, emsg:
+            raise SystemEventsError('Appscript initialization error: {0}'.format(emsg.errormessage))
 
         for ref in self.app.users.get():
             u = OSXUserAccount(self, ref)
@@ -67,9 +67,11 @@ class OSXUserAccount(dict):
 
     def __getitem__(self, item):
         if item not in self.keys():
-            raise KeyError('No such OSXUserAccount item: %s' % item)
+            raise KeyError('No such OSXUserAccount item: {0}'.format(item))
+
         if item == 'home_directory':
             return getattr(self.reference, item).get().path
+
         return getattr(self.reference, item).get()
 
     def __str__(self):
@@ -94,14 +96,15 @@ class OSXUserFolders(dict):
     def __init__(self):
         try:
             self.app = appscript.app('System Events')
-        except appscript.reference.CommandError, e:
-            raise SystemEventsError('Appscript initialization error: %s' % e.errormessage)
+        except appscript.reference.CommandError, emsg:
+            raise SystemEventsError('Appscript initialization error: {0}'.format(emsg.errormessage))
 
         for k in sorted(FOLDER_NAME_MAP.keys()):
             ref = getattr(self.app, FOLDER_NAME_MAP[k]).get()
             if ref is None:
                 self[k] = None
                 continue
+
             self[k] = OSXFolderItem(self, ref)
 
 class OSXFolderItem(dict):
@@ -128,10 +131,13 @@ class OSXFolderItem(dict):
             if item == 'mtime':
                 item = 'modification_date'
             return int(getattr(self.reference, item).get().strftime('%s'))
+
         if item == 'path':
             item = 'POSIX_path'
+
         if item not in self.keys():
-            raise KeyError('No such OSXFolderItem item: %s' % item)
+            raise KeyError('No such OSXFolderItem item: {0}'.format(item))
+
         return getattr(self.reference, item).get()
 
     def __str__(self):

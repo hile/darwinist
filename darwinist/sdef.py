@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Module to create application dictionaries for appscript using command line sdef tool
 """
@@ -8,22 +7,22 @@ from subprocess import check_output
 from lxml import etree as ET
 
 class SDEFError(Exception):
-    def __str__(self):
-        return self.args[0]
+    pass
+
 
 class SDEF(object):
     def __init__(self,path):
         self.path = path
         if not os.path.isdir(path):
-            raise SDEFError('Not a directory: %s' % path)
-        self.tree = ET.fromstring(check_output(['sdef',path]))
+            raise SDEFError('Not a directory: {0}'.format(path))
+        self.tree = ET.fromstring(check_output(['sdef', path]))
 
     def __getattr__(self,attr):
         if attr == 'terms':
             return self.__generate_terms()
 
     def __generate_terms(self):
-        output = 'version = 1.1\npath = %s' % self.path
+        output = 'version = 1.1\npath = {0}'.format(self.path)
         classes = []
         enums = []
         properties = []
@@ -38,14 +37,17 @@ class SDEF(object):
                     continue
                 element = node.get('plural').replace(' ','_')
                 elements.append((element,code))
+
             for node in suite.xpath('enumeration/enumerator'):
                 name = node.get('name').replace(' ','_')
                 code = node.get('code')
                 enums.append((name,code))
+
             for node in suite.xpath('class/property'):
                 name = node.get('name').replace(' ','_')
                 code = node.get('code')
                 properties.append((name,code))
+
             for node in suite.xpath('command'):
                 name = node.get('name').replace(' ','_')
                 code = node.get('code')
@@ -56,9 +58,10 @@ class SDEF(object):
                     cparams.append((pname,pcode))
                 commands.append((name,code,cparams))
 
-        output += '\nclasses = %s' % classes
-        output += '\nenums = %s' % enums
-        output += '\nproperties = %s' % properties
-        output += '\nelements = %s' % elements
-        output += '\ncommands = %s' % commands
+        output += '\nclasses = {0}'.format(classes)
+        output += '\nenums = {0}'.format(enums)
+        output += '\nproperties = {0}'.format(properties)
+        output += '\nelements = {0}'.format(elements)
+        output += '\ncommands = {0)}'.format(commands)
+
         return output

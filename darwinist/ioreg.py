@@ -15,8 +15,8 @@ class IORegError(Exception):
     """
     Execptions raised by ioreg command output parsers.
     """
-    def __str__(self):
-        return self.args[0]
+    pass
+
 
 class IORegItem(object):
     """
@@ -29,13 +29,13 @@ class IORegItem(object):
             try:
                 key, value = line.split(':', 1)
             except ValueError, emsg:
-                raise IORegError('Error splitting item line %s' % line)
+                raise IORegError('Error splitting item line {0}'.format(line))
 
         self.key = key.rstrip().strip('"')
         self.value = value.strip()
 
     def __repr__(self):
-        return '%s: %s' % (self.key, self.value)
+        return '{0}: {1}'.format(self.key, self.value)
 
 class IORegGroup(dict):
     """
@@ -47,13 +47,13 @@ class IORegGroup(dict):
 
         m = RE_IOREG_HEADER.match(header)
         if not m:
-            raise IORegError('Error parsing header: %s' % header)
+            raise IORegError('Error parsing ioreg group header: {0}'.format(header))
 
         for k, v in m.groupdict().items():
             setattr(self, k, v.strip())
 
     def __repr__(self):
-        return 'IORegGroup %s' % self.name
+        return 'IORegGroup {0}'.format(self.name)
 
     def append(self, line):
         """
@@ -62,8 +62,10 @@ class IORegGroup(dict):
         line = line.strip()
         if line in ['"', '']:
             return
+
         item = IORegItem(line)
         self[item.key] = item
+
 
 class IORegTree(list):
     """
@@ -71,7 +73,7 @@ class IORegTree(list):
     """
     def __init__(self, path=None):
         if not os.access(IOREG_COMMAND, os.X_OK):
-            raise IORegError('Not executable: %s' % IOREG_COMMAND)
+            raise IORegError('Not executable: {0}'.format(IOREG_COMMAND))
 
         if path is not None:
             cmd = [IOREG_COMMAND, '-r', '-w0', '-n', path]
@@ -84,9 +86,10 @@ class IORegTree(list):
         parent = None
         group = None
         entries = []
-        for l in [l.lstrip(' |').rstrip() for l in stdout.split('\n')]:
+        for l in [l.lstrip(' |').rstrip() for l in stdout.splitlines()]:
             if l in ['', '{']:
                 continue
+
             elif l[:3] == '+-o':
                 group = IORegGroup(parent, l)
                 parent = group
@@ -94,8 +97,10 @@ class IORegTree(list):
 
             elif l == '}':
                 group = None
+
             elif group is not None:
                 group.append(l)
+
             else:
-                print 'ENTRY out of group: %s' % l
+                print 'ENTRY out of group: {0}'.format(l)
 

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Wrapper for scons build systems to install dependencies from homebrew
 build system on OS/X.
@@ -41,10 +40,12 @@ HOMEBREW_DEFAULT_COMMAND = os.path.join(HOMEBREW_PREFIX, 'bin', 'brew')
 class HomebrewError(Exception):
     pass
 
+
 class Homebrew(dict):
     """
     Wrapper for homebrew packaging system's brew command
     """
+
     def __init__(self, brew=HOMEBREW_DEFAULT_COMMAND):
         self.brew = brew
         self.update_installed()
@@ -53,7 +54,7 @@ class Homebrew(dict):
         """
         Return package names as sorted list
         """
-        return sorted(dict.keys(self))
+        return sorted(super(Homebrew, self).keys())
 
     def items(self):
         """
@@ -75,8 +76,11 @@ class Homebrew(dict):
         cmd = [self.brew, 'list']
         p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         (stdout, stderr) = p.communicate()
-        for l in filter(lambda x: x.strip()!='',  stdout.split('\n')):
-            self[l] = HomebrewPackage(self, l)
+
+        for line in [line.strip() for line in stdout.splitlines()]:
+            if not line:
+                continue
+            self[line] = HomebrewPackage(self, line)
 
     def available_formulas(self):
         """
@@ -93,11 +97,12 @@ class Homebrew(dict):
         cmd = [self.brew, 'cleanup']
         p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         (stdout, stderr) = p.communicate()
+
         if p.returncode != 0:
-            raise HomebrewError('Error cleaning up homebrew: %s' % stderr)
+            raise HomebrewError('Error cleaning up homebrew: {0}'.format(stderr))
+
         return stdout
 
-    #noinspection PyMethodOverriding
     def update(self):
         """
         Update homebrew package descriptions with brew update
@@ -106,7 +111,8 @@ class Homebrew(dict):
         p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         (stdout, stderr) = p.communicate()
         if p.returncode != 0:
-            raise HomebrewError('Error updating homebrew\n%s' % stdout)
+            raise HomebrewError('Error updating homebrew\n{0}'.format(stdout))
+
         return stdout
 
     def upgrade_all(self):
@@ -118,14 +124,15 @@ class Homebrew(dict):
         p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         (stdout, stderr) = p.communicate()
         if p.returncode != 0:
-            raise HomebrewError('Error upgrading brew packages\n%s' % stdout)
+            raise HomebrewError('Error upgrading brew packages\n{0}'.format(stdout))
+
         return stdout
 
     def is_installed(self, package):
         """
         Returns if package is installed,  at least some version
         """
-        return package in self.keys()
+        return package in self
 
     def install(self, package, force_install=False):
         """
@@ -133,8 +140,9 @@ class Homebrew(dict):
         """
         if not force_install and self.is_installed(package):
             return
+
         if not package in self.available_formulas():
-            raise HomebrewError('Homebrew: unknown package: %s' % package)
+            raise HomebrewError('Homebrew: unknown package: {0}'.format(package))
 
         package = HomebrewPackage(self, package)
         package.install()
@@ -150,13 +158,13 @@ class HomebrewPackage(object):
         self.cellar = os.path.join(HOMEBREW_PREFIX, 'Cellar', name)
 
     def __repr__(self):
-        return '%s in %s' % (self.name, self.cellar)
+        return '{0} in {1}'.format(self.name, self.cellar)
 
     def __getattr__(self, attr):
         if attr == 'versions':
             return os.listdir(self.cellar)
 
-        raise AttributeError('No such HomebrewPackage attribute: %s' % attr)
+        raise AttributeError('No such HomebrewPackage attribute: {0}'.format(attr))
 
     def install(self, force_install=False):
         """
@@ -170,6 +178,6 @@ class HomebrewPackage(object):
         (stdout, stderr) = p.communicate()
 
         if p.returncode != 0:
-            raise HomebrewError('Homebrew: error installing %s\n%s' % (self.name, stdout))
+            raise HomebrewError('Homebrew: error installing {0}\n{1}'.formt(self.name, stdout))
 
         return stdout, stderr

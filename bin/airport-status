@@ -15,13 +15,13 @@ status = AirportStatus()
 status.probe()
 
 if args.signal_strength:
-    script.message('SSID: %s' % status['SSID'])
+    script.message('SSID: {0}'.format(status['SSID']))
     for ap in status.proximity():
         script.message('BSSID: %(BSSID)s RSSI: %(RSSI)s dB' % ap)
 
 elif args.details:
     for k in sorted(status.keys()):
-        script.message('%20s %s' % (k, status[k]))
+        script.message('{0:20} {1}'.format(k, status[k]))
 
 else:
     script.message(status)

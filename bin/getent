@@ -3,7 +3,8 @@
 # Very basic implementation of getent command for OS/X
 #
 
-import grp, pwd
+import grp
+import pwd
 from systematic.shell import Script
 
 script = Script()
@@ -11,7 +12,6 @@ script.add_argument('database', help='Account database to lookup')
 script.add_argument('names', nargs='*', help='Names to lookup')
 args = script.parse_args()
 
-script.log.debug('Loading %s' % args.database)
 
 if args.database == 'passwd':
 	accounts = dict((a.pw_name, a) for a in pwd.getpwall())
