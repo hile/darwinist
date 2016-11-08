@@ -18,7 +18,6 @@ setup(
         'systematic>=4.4.8',
         'appscript',
         'pyfsevents',
-        'pyobjc',
     ),
 )
 
