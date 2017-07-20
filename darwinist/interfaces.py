@@ -82,6 +82,6 @@ class Interface(dict):
             try:
                 key, value = line.strip().split('=', 1)
             except ValueError:
-                print 'Error splitting line {0}'.format(line)
+                raise ValueError('Error splitting line {0}'.format(line))
 
         self[key] = value

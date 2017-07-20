@@ -19,9 +19,9 @@ if args.paths:
         try:
             app = Application(path)
             version = app.version
-            print app.path.rstrip(os.sep), version
+            script.message('{0} {1}'.format(app.path.rstrip(os.sep), version))
 
-        except ApplicationError,emsg:
+        except ApplicationError as e:
             script.error(emsg)
             continue
 
@@ -29,9 +29,9 @@ elif args.list:
     for app in ApplicationTree():
         try:
             version = app.version
-            print app.path.rstrip(os.sep), version
+            script.message('{0} {1}'.format(app.path.rstrip(os.sep), version))
 
-        except ApplicationError,emsg:
+        except ApplicationError as e:
             script.error(emsg)
             continue
 

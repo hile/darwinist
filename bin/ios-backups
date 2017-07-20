@@ -12,7 +12,7 @@ class IOSBackupCommand(ScriptCommand):
     def parse_args(self, args):
         try:
             self.backups = IOSDeviceBackups()
-        except IOSBackupError, emsg:
+        except IOSBackupError as e:
             self.exit(1, emsg)
 
         if 'names' in args and args.names:
@@ -64,10 +64,10 @@ class DumpSMSCommand(IOSBackupCommand):
             if args.output_file:
                 try:
                     fd = open(args.output_file, 'wb')
-                except OSError, (ecode, emsg):
-                    self.exit(1, 'Error opening %s for writing: %s' % (args.output_file, emsg))
-                except IOError, (ecode, emsg):
-                    self.exit(1, 'Error opening %s for writing: %s' % (args.output_file, emsg))
+                except OSError as e:
+                    self.exit(1, 'Error opening %s for writing: %s' % (args.output_file, e))
+                except IOError as e:
+                    self.exit(1, 'Error opening %s for writing: %s' % (args.output_file, e))
 
             else:
                 fd = sys.stdout

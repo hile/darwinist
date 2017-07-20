@@ -43,8 +43,8 @@ class OSXUserAccounts(dict):
     def __init__(self):
         try:
             self.app = appscript.app('System Events')
-        except appscript.reference.CommandError, emsg:
-            raise SystemEventsError('Appscript initialization error: {0}'.format(emsg.errormessage))
+        except appscript.reference.CommandError as e:
+            raise SystemEventsError('Appscript initialization error: {0}'.format(e))
 
         for ref in self.app.users.get():
             u = OSXUserAccount(self, ref)
@@ -96,8 +96,8 @@ class OSXUserFolders(dict):
     def __init__(self):
         try:
             self.app = appscript.app('System Events')
-        except appscript.reference.CommandError, emsg:
-            raise SystemEventsError('Appscript initialization error: {0}'.format(emsg.errormessage))
+        except appscript.reference.CommandError as e:
+            raise SystemEventsError('Appscript initialization error: {0}'.format(e))
 
         for k in sorted(FOLDER_NAME_MAP.keys()):
             ref = getattr(self.app, FOLDER_NAME_MAP[k]).get()

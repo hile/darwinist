@@ -75,18 +75,18 @@ class coreStorage(list):
 
         cmd = ( 'diskutil', 'coreStorage', 'list', )
         try:
-            for l in check_output(cmd).splitlines():
-                l = l.lstrip('|+-<> ')
+            for line in check_output(cmd).splitlines():
+                line = line.decode('utf-8').lstrip('|+-<> ')
 
-                if l.strip() == '' or l.strip('-=') == '':
+                if line.strip() == '' or line.strip('-=') == '':
                  continue
 
-                m = re_header.match(l)
+                m = re_header.match(line)
                 if m:
                     self.lvg_count = int(m.group(1))
                     continue
 
-                m = re_lvg_header.match(l)
+                m = re_lvg_header.match(line)
                 if m:
                     lvg = coreStorageLVG(m.group(1))
                     self.append(lvg)
@@ -95,7 +95,7 @@ class coreStorage(list):
                     lv = None
                     continue
 
-                m = re_pv_header.match(l)
+                m = re_pv_header.match(line)
                 if m:
                     pv = coreStoragePV(lvg, m.group(1))
                     lvg.pvs.append(pv)
@@ -103,22 +103,22 @@ class coreStorage(list):
                     lvf = None
                     continue
 
-                m = re_lvf_header.match(l)
+                m = re_lvf_header.match(line)
                 if m:
                     lvf = coreStorageLVFamily(lvg, m.group(1))
                     lvg.lvfs.append(lvf)
                     lv = None
                     continue
 
-                m = re_lv_header.match(l)
+                m = re_lv_header.match(line)
                 if m:
                     lv = coreStorageLV(lvg, m.group(1))
                     lvf.lvs.append(lv)
                     continue
                 try:
-                    (key, value) = map(lambda x: x.strip(),  l.split(':', 1))
-                except ValueError:
-                    raise ValueError('Error parsing line %s' % l)
+                    key, value = line.strip().split(':', 1)
+                except ValueError as e:
+                    continue
 
                 if lv is not None:
                     lv[key] = value
@@ -129,10 +129,10 @@ class coreStorage(list):
                 elif lvg is not None:
                     lvg[key] = value
                 else:
-                    raise ValueError('Out of order line: %s' % l)
+                    raise ValueError('Out of order line: %s' % line)
 
-        except CalledProcessError, emsg:
-            raise ValueError('Error listing corestorege volumes: {0}'.format(emsg))
+        except CalledProcessError as e:
+            raise ValueError('Error listing corestorege volumes: {0}'.format(e))
 
 
 class coreStorageLVG(dict):
@@ -157,6 +157,7 @@ class coreStorageLVG(dict):
             pass
         super(coreStorageLVG, self).__setitem__(item, value)
 
+
 class coreStoragePV(dict):
     """
     Class to represent one corestorage PV (physical volume)
@@ -177,6 +178,7 @@ class coreStoragePV(dict):
         except KeyError:
             pass
         super(coreStoragePV, self).__setitem__(item, value)
+
 
 class coreStorageLVFamily(dict):
     """
@@ -199,6 +201,7 @@ class coreStorageLVFamily(dict):
         except KeyError:
             pass
         super(coreStorageLVFamily, self).__setitem__(item, value)
+
 
 class coreStorageLV(dict):
     """

@@ -51,7 +51,7 @@ class TimeMachineDestination(dict):
 
     """
     def __init__(self, data):
-        for line in [line.rstrip() for line in data.splitlines() if not line.startswith('=')]:
+        for line in [line.decode('utf-8').rstrip() for line in data.splitlines() if not line.startswith('=')]:
             try:
                 key, value = [x.strip() for x in line.split(':', 1)]
                 self[key] = value

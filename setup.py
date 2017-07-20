@@ -15,9 +15,8 @@ setup(
     scripts = glob.glob('bin/*'),
     packages = find_packages(),
     install_requires = (
-        'systematic>=4.4.8',
+        'systematic>=4.7.10',
         'appscript',
-        'pyfsevents',
     ),
 )
 

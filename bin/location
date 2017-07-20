@@ -21,7 +21,7 @@ manager = CoreLocationManager()
 
 try:
     coordinates = manager.get_coordinates(args.wait_seconds)
-except CoreLocationError, emsg:
+except CoreLocationError as e:
     manager.stopUpdatingLocation()
     script.exit(1, emsg)
 
@@ -29,5 +29,5 @@ manager.stopUpdatingLocation()
 
 try:
     script.message('\n'.join(manager.get_addresses(coordinates, count=args.count)))
-except CoreLocationError, emsg:
+except CoreLocationError as e:
     script.exit(1, emsg)

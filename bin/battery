@@ -12,8 +12,8 @@ args = script.parse_args()
 
 batteries = Batteries()
 for battery in batteries:
-    print battery
+    script.message(battery)
     if args.verbose:
         for k, v in battery.items():
-            print '{0:26} {1}'.format(k, v)
+            script.message('{0:26} {1}'.format(k, v))
 

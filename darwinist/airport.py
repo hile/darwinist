@@ -42,10 +42,10 @@ class AirportStatus(dict):
         cmd = ( AIRPORT_BINARY, '-I', )
         try:
             data = check_output(cmd)
-        except CalledProcessError, emsg:
-            raise AirportError('Error running {0}: {1}'.format(' '.join(cmd), emsg))
+        except CalledProcessError as e:
+            raise AirportError('Error running {0}: {1}'.format(' '.join(cmd), e))
 
-        for line in data.splitlines():
+        for line in [line.decode('utf-8') for line in data.splitlines()]:
             if not line.strip():
                 continue
 
@@ -70,11 +70,11 @@ class AirportStatus(dict):
         cmd = ( AIRPORT_BINARY, '-s', self.SSID, )
         try:
             data = check_output(cmd)
-        except CalledProcessError, emsg:
+        except CalledProcessError as e:
             raise AirportError('Error running {0}: {1}'.format(' '.join(cmd), emsg))
             return
 
-        for line in data.splitlines():
+        for line in [line.decode('utf-8') for line in data.splitlines()]:
             if not line.strip():
                 continue
 

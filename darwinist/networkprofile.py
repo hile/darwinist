@@ -32,8 +32,8 @@ class NetworkProfileList(object):
             self.app = appscript.app('System Events')
             self.location = self.app.network_preferences.get().current_location.get()
 
-        except appscript.reference.CommandError,emsg:
-            raise NetworkConfigError('Appscript initialization error: {0}'.format(emsg.errormessage))
+        except appscript.reference.CommandError as e:
+            raise NetworkConfigError('Appscript initialization error: {0}'.format(e))
 
     def __read_config__(self, config):
         if not os.path.isfile(config):
@@ -111,7 +111,7 @@ class NetworkConnection(object):
 
         try:
             self.connection = profiles.location.services[name].get()
-        except KeyError,e:
+        except KeyError as e:
             raise NetworkConfigError(str(e).strip("'"))
 
     def __cmp__(self, other):

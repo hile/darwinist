@@ -43,8 +43,8 @@ class AFPShareConfig(dict):
         for key in [key for key in self.conf if key != 'Options']:
             try:
                 self[key] = AFPShareDisk(key, self.config[key])
-            except AFPShareError, emsg:
-                print emsg
+            except AFPShareError as e:
+                raise AFPShareError('Error parsing configuration: {0}'.format(e))
 
     def __getattr__(self, attr):
         if attr == 'disks':
@@ -148,17 +148,17 @@ class AFPShareDisk(dict):
                 if os.stat(self.mountpoint).st_uid != os.getuid():
                     os.chown(self.mountpoint, os.getpid(), os.getgid())
 
-            except IOError, (ecode, emsg):
-                raise AFPShareError(emsg)
+            except IOError as e:
+                raise AFPShareError(e)
 
-            except OSError, (ecode, emsg):
-                raise AFPShareError(emsg)
+            except OSError as e:
+                raise AFPShareError(e)
 
         cmd = ( 'mount_afp', self.afp_path, self.mountpoint, )
         try:
             call(cmd)
-        except CalledProcessError, emsg:
-            raise AFPShareError('Error running {0}: {1}'.format(' '.join(cmd), emsg)
+        except CalledProcessError as e:
+            raise AFPShareError('Error running {0}: {1}'.format(' '.join(cmd), e))
 
     def umount(self):
         """
@@ -173,6 +173,6 @@ class AFPShareDisk(dict):
         cmd = ('hdiutil', 'detach', self.mountpoint, )
         try:
             call(cmd)
-        except CalledProcessError, emsg:
-            raise AFPShareError('Error running {0}: {1}'.format(' '.join(cmd), emsg)
+        except CalledProcessError as e:
+            raise AFPShareError('Error running {0}: {1}'.format(' '.join(cmd), e)
 

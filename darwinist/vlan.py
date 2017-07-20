@@ -30,7 +30,6 @@ class VLAN(object):
         p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
         if p.returncode != 0:
-            print stdout
             raise VLANError('ERROR creating VLAN {0}'.format(tag))
 
         self.name = name
@@ -42,7 +41,6 @@ class VLAN(object):
         p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         (stdout, stderr) = p.communicate()
         if p.returncode != 0:
-            print stdout
             raise VLANError('ERROR removing VLAN {0}'.format(self.tag))
 
 class VLANList(list):
@@ -51,19 +49,19 @@ class VLANList(list):
         p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
 
         stdout, stderr = p.communicate()
-        lines = stdout.splitlines()
+        lines = [line.decode('utf-8') for line in stdout.splitlines()]
         if lines[0] == NO_VLANS_MESSAGE:
             return
 
         entry = None
-        for l in [l.rstrip() for l in lines]:
-            if l=='':
+        for line in [line.rstrip() for line in lines]:
+            if line == '':
                 if entry is not None:
                     self.append(entry)
                 entry = None
 
             for k, v in VLANLIST_LINE_MAP.items():
-                if l[:len(v)]==v:
+                if l[:len(v)] == v:
                     if entry is None:
                         entry = VLAN()
-                    setattr(entry, k, l[len(v):].lstrip())
+                    setattr(entry, k, line[len(v):].lstrip())

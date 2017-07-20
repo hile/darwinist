@@ -30,12 +30,11 @@ class NetworkSetup(object):
         if not os.access(CMD,os.X_OK):
             raise NetworkSetupError('No permission to execute: {0}'.format(CMD))
 
-        self.network_services = [NetworkService(n) for n in filter(
-                lambda x: x!='',
-                check_output(
-                    ['networksetup','-listallnetworkservices']
-                ).splitlines()[1:]
-            )]
+        self.network_services = []
+        for line in check_output(('networksetup','-listallnetworkservices')).splitlines():
+            line = line.decode('utf-8')
+            if line != '':
+                self.network_services.append(NetworkService(line))
 
     def __getattr__(self,attr):
         raise AttributeError('No such NetworkSetup attribute: {0}'.format(attr))

@@ -19,7 +19,7 @@ if args.database == 'passwd':
 		if args.names and name not in args.names:
 			continue
 		a = accounts[name]
-		print ':'.join([a.pw_name, a.pw_passwd, '%s'%a.pw_uid, '%s'%a.pw_gid, a.pw_gecos, a.pw_dir, a.pw_shell])
+		script.message(':'.join([a.pw_name, a.pw_passwd, '%s'%a.pw_uid, '%s'%a.pw_gid, a.pw_gecos, a.pw_dir, a.pw_shell]))
 
 elif args.database == 'group':
 	groups = dict((g.gr_name, g) for g in grp.getgrall())
@@ -27,7 +27,7 @@ elif args.database == 'group':
 		if args.names and name not in args.names:
 			continue
 		g = groups[name]
-		print ':'.join([g.gr_name, g.gr_passwd, '%s'%g.gr_gid, ', '.join(g.gr_mem)])
+		script.message':'.join([g.gr_name, g.gr_passwd, '%s'%g.gr_gid, ', '.join(g.gr_mem)]))
 
 else:
 	script.exit(1, 'Unsupported database name: %s' % args.database)

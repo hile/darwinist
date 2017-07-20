@@ -4,9 +4,10 @@ Wrapper for OS/X diskutil command for python
 
 import os
 import plistlib
-import StringIO
 from xml.parsers.expat import ExpatError
 from subprocess import Popen, PIPE
+
+from io import BytesIO
 
 INFO_FIELD_MAP = {
     'DeviceNode':       {'name': 'Device', 'value': lambda x: str(x)},
@@ -42,10 +43,10 @@ class DiskInfo(dict):
         p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
         try:
-            plist = StringIO.StringIO(stdout)
+            plist = BytesIO(stdout)
             self.update(plistlib.readPlist(plist))
-        except ExpatError, emsg:
-            raise DiskUtilError('Error parsing plist: {0}'.format(stdout))
+        except ExpatError as e:
+            raise DiskUtilError('Error parsing plist: {0}'.format(stdoud))
 
         if 'TotalSize' in self and 'FreeSpace' in self:
             self['UsedSpace'] = self.TotalSize - self.FreeSpace

@@ -93,7 +93,7 @@ class AttachCommand(DMGCommand):
                 try:
                     dmg.attach()
                     break
-                except DiskImageError, emsg:
+                except DiskImageError as e:
                     if retry >= args.retries:
                         self.script.error(emsg)
                     retry += 1
@@ -109,8 +109,9 @@ class DetachCommand(DMGCommand):
 
             try:
                 dmg.detach()
-            except DiskImageError, emsg:
-                print emsg
+            except DiskImageError as e:
+                self.error(emsg)
+
 
 script = Script()
 c = script.add_subcommand(NamesCommand('names', 'List image names'))

@@ -28,7 +28,7 @@ class IORegItem(object):
         except ValueError:
             try:
                 key, value = line.split(':', 1)
-            except ValueError, emsg:
+            except ValueError as e:
                 raise IORegError('Error splitting item line {0}'.format(line))
 
         self.key = key.rstrip().strip('"')
@@ -86,7 +86,7 @@ class IORegTree(list):
         parent = None
         group = None
         entries = []
-        for l in [l.lstrip(' |').rstrip() for l in stdout.splitlines()]:
+        for l in [l.decode('utf-8').lstrip(' |').rstrip() for l in stdout.splitlines()]:
             if l in ['', '{']:
                 continue
 
@@ -100,7 +100,4 @@ class IORegTree(list):
 
             elif group is not None:
                 group.append(l)
-
-            else:
-                print 'ENTRY out of group: {0}'.format(l)
 

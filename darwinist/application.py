@@ -66,8 +66,8 @@ class ApplicationInfo(dict):
 
         try:
             self.update(plistlib.readPlist(self.path).items())
-        except ExpatError,emsg:
-            raise ApplicationError('Error parsing {0}: {1}'.format(self.path, emsg))
+        except ExpatError as e:
+            raise ApplicationError('Error parsing {0}: {1}'.format(self.path, e))
 
     def __repr__(self):
         return unicode('{0} {1}'.format(self.name, self.version))
