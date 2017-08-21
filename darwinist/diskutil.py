@@ -46,7 +46,7 @@ class DiskInfo(dict):
             plist = BytesIO(stdout)
             self.update(plistlib.readPlist(plist))
         except ExpatError as e:
-            raise DiskUtilError('Error parsing plist: {0}'.format(stdoud))
+            raise DiskUtilError('Error parsing plist: {0}'.format(stdout))
 
         if 'TotalSize' in self and 'FreeSpace' in self:
             self['UsedSpace'] = self.TotalSize - self.FreeSpace
