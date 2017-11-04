@@ -1,33 +1,63 @@
 #!/usr/bin/env python
-#
-# Very basic implementation of getent command for OS/X
-#
+
+USAGE = """Get command for OS/X
+
+Very basic implementation of getent command for OS/X
+"""
 
 import grp
 import pwd
-from systematic.shell import Script
+from systematic.shell import Script, ScriptCommand
+from systematic.user import UnixPasswordDB, DatabaseError
 
-script = Script()
-script.add_argument('database', help='Account database to lookup')
-script.add_argument('names', nargs='*', help='Names to lookup')
+
+class GetEntCommand(ScriptCommand):
+	def __init__(self, *args, **kwargs):
+		super(GetEntCommand, self).__init__(*args, **kwargs)
+		self.accounts = UnixPasswordDB()
+
+
+class PasswdCommand(GetEntCommand):
+	def run(self, args):
+		self.accounts.load_users()
+		for name in args.names:
+			try:
+				user = self.accounts.lookup_user(name)
+				script.message(':'.join([
+					'{0}'.format(user.username),
+					'{0}'.format(user.password),
+					'{0}'.format(user.uid),
+					'{0}'.format(user.gid),
+					'{0}'.format(user.gecos),
+					'{0}'.format(user.directory),
+					'{0}'.format(user.shell),
+				]))
+			except DatabaseError:
+				pass
+
+
+class GroupCommand(GetEntCommand):
+	def run(self, args):
+		self.accounts.load_groups()
+		for name in args.names:
+			try:
+				group = self.accounts.lookup_group(name)
+				script.message(':'.join([
+					'{0}'.format(group.name),
+					'{0}'.format(group.password),
+					'{0}'.format(group.gid),
+					','.join(group.member_uids),
+				]))
+			except DatabaseError:
+				pass
+
+
+script = Script(USAGE)
+
+c = script.add_subcommand(PasswdCommand('passwd', 'Lookup users'))
+c.add_argument('names', nargs='*', help='Names to lookup')
+
+c = script.add_subcommand(GroupCommand('group', 'Lookup groups'))
+c.add_argument('names', nargs='*', help='Names to lookup')
+
 args = script.parse_args()
-
-
-if args.database == 'passwd':
-	accounts = dict((a.pw_name, a) for a in pwd.getpwall())
-	for name in sorted(accounts.keys()):
-		if args.names and name not in args.names:
-			continue
-		a = accounts[name]
-		script.message(':'.join([a.pw_name, a.pw_passwd, '%s'%a.pw_uid, '%s'%a.pw_gid, a.pw_gecos, a.pw_dir, a.pw_shell]))
-
-elif args.database == 'group':
-	groups = dict((g.gr_name, g) for g in grp.getgrall())
-	for name in sorted(groups.keys()):
-		if args.names and name not in args.names:
-			continue
-		g = groups[name]
-		script.message':'.join([g.gr_name, g.gr_passwd, '%s'%g.gr_gid, ', '.join(g.gr_mem)]))
-
-else:
-	script.exit(1, 'Unsupported database name: %s' % args.database)

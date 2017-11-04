@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+USAGE = """IOS device backup parsing
+
+"""
+
 import json
 import sys
 
@@ -7,6 +11,7 @@ from darwinist.ios.backup import IOSDeviceBackups, IOSBackupError
 from systematic.shell import Script, ScriptCommand
 
 TIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
+
 
 class IOSBackupCommand(ScriptCommand):
     def parse_args(self, args):
@@ -32,7 +37,7 @@ class ListBackupsCommand(IOSBackupCommand):
         args = self.parse_args(args)
 
         for device in self.backups:
-            self.message('%s updated on %s' % (device.device_name, device.updated))
+            self.message('{0} updated on {1}'.format(device.device_name, device.updated))
 
 
 class CheckDatabasesCommand(IOSBackupCommand):
@@ -40,13 +45,14 @@ class CheckDatabasesCommand(IOSBackupCommand):
         args = self.parse_args(args)
 
         for device in self.filter_devices_by_name(args):
-            self.message('Checking %s' % device)
+            self.message('Checking {0}'.format(device))
             for key in ( 'sms', 'addressbook', 'notes', 'calendar', 'calls', ):
                 db = getattr(device, key)
                 if db.exists and db.readable:
-                    self.message('  %s OK' % db.name)
+                    self.message('  {0} OK'.format(db.name))
                 else:
-                    self.message('  %s MISSING OR UNREADABLE' % db.name)
+                    self.message('  {0} MISSING OR UNREADABLE'.format(db.name))
+
 
 class DumpSMSCommand(IOSBackupCommand):
     def output_chat(self, fd, chat):
@@ -59,15 +65,15 @@ class DumpSMSCommand(IOSBackupCommand):
 
         for device in self.filter_devices_by_name(args):
             if not device.sms.exists:
-                self.exit(2, 'No SMS backup for %s' % device.device_name)
+                self.exit(2, 'No SMS backup for {0}'.format(device.device_name))
 
             if args.output_file:
                 try:
                     fd = open(args.output_file, 'wb')
                 except OSError as e:
-                    self.exit(1, 'Error opening %s for writing: %s' % (args.output_file, e))
+                    self.exit(1, 'Error opening {0} for writing: {1}'.format(args.output_file, e))
                 except IOError as e:
-                    self.exit(1, 'Error opening %s for writing: %s' % (args.output_file, e))
+                    self.exit(1, 'Error opening {0} for writing: {1}'.format(args.output_file, e))
 
             else:
                 fd = sys.stdout
@@ -84,7 +90,7 @@ class DumpSMSCommand(IOSBackupCommand):
                         'messages': [
                             {
                                 'date': message.date.strftime(TIME_FORMAT),
-                                'sender': '%s' % message.sender,
+                                'sender': '{0}'.format(message.sender),
                                 'text': message.text,
                             }
                             for message in chat.messages
