@@ -22,7 +22,7 @@ if args.paths:
             script.message('{0} {1}'.format(app.path.rstrip(os.sep), version))
 
         except ApplicationError as e:
-            script.error(emsg)
+            script.error(e)
             continue
 
 elif args.list:
@@ -32,7 +32,7 @@ elif args.list:
             script.message('{0} {1}'.format(app.path.rstrip(os.sep), version))
 
         except ApplicationError as e:
-            script.error(emsg)
+            script.error(e)
             continue
 
 else:
