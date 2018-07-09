@@ -13,6 +13,7 @@ RE_ETHERNET_ADDRESS = re.compile(
     'Ethernet Address: (?P<mac>.*) \(Hardware Port: (?P<port>[^/)]+)\)$'
 )
 
+
 class NetworkSetupError(Exception):
     """
     Exceptions raised while parsing OS/X network setup
@@ -27,23 +28,24 @@ class NetworkSetup(object):
     def __init__(self):
         if not os.path.isfile(CMD):
             raise NetworkSetupError('No such file: {0}'.format(CMD))
-        if not os.access(CMD,os.X_OK):
+        if not os.access(CMD, os.X_OK):
             raise NetworkSetupError('No permission to execute: {0}'.format(CMD))
 
         self.network_services = []
-        for line in check_output(('networksetup','-listallnetworkservices')).splitlines():
+        for line in check_output(('networksetup', '-listallnetworkservices')).splitlines():
             line = line.decode('utf-8')
             if line != '':
                 self.network_services.append(NetworkService(line))
 
-    def __getattr__(self,attr):
+    def __getattr__(self, attr):
         raise AttributeError('No such NetworkSetup attribute: {0}'.format(attr))
+
 
 class NetworkService(object):
     """
     One specific network service parsed from 'networksetup' output
     """
-    def __init__(self,name):
+    def __init__(self, name):
         self.name = name
 
     def __repr__(self):
@@ -55,30 +57,30 @@ class NetworkService(object):
         """
         details = {}
         try:
-            out = filter(lambda x: x!='', check_output(
-                ['networksetup','-getinfo',self.name]
+            out = filter(lambda x: x != '', check_output(
+                ['networksetup', '-getinfo', self.name]
             ).splitlines())
         except CalledProcessError:
             return details
 
-        for l in out:
-            if l == 'Manual Configuration':
+        for line in out:
+            if line == 'Manual Configuration':
                 details['ipv4_mode'] = 'manual'
                 continue
 
-            if l == 'DHCP Configuration':
+            if line == 'DHCP Configuration':
                 details['ipv4_mode'] = 'dhcp'
                 continue
 
             try:
-                (key,value) = [x.strip() for x in l.split(':',1)]
+                key, value = [x.strip() for x in line.split(':', 1)]
             except ValueError:
-                raise ValueError('Error parsing line: {0}'.format(l))
+                raise ValueError('Error parsing line: {0}'.format(line))
 
             if value == 'none':
                 value = None
 
-            if key in ['Subnet mask','IP address','Router']:
+            if key in ['Subnet mask', 'IP address', 'Router']:
                 value = IPv4Address(value)
 
             if key == 'Ethernet Address':
@@ -94,7 +96,7 @@ class NetworkService(object):
         """
         try:
             out = check_output(
-                ['networksetup','-getmacaddress',self.name]
+                ['networksetup', '-getmacaddress', self.name]
             ).strip('\n')
         except CalledProcessError:
             return None
@@ -121,7 +123,7 @@ class NetworkService(object):
 
         Mode can be: dhcp, manual or bootp
         """
-        if mode not in [ 'dhcp', 'manual', 'bootp']:
+        if mode not in ['dhcp', 'manual', 'bootp']:
             raise ValueError('Invalid IPv4 configuratio mode')
 
         if mode == 'bootp':
@@ -164,7 +166,9 @@ class NetworkService(object):
                 except ValueError:
                     raise NetworkSetupError('Invalid IPv4 Address: {0}'.format(router))
 
-            cmd = ['networksetup', '-setmanual', self.name,
+            cmd = [
+                'networksetup',
+                '-setmanual', self.name,
                 ipaddress.ipaddress,
                 netmask.ipaddress,
                 router.ipaddress

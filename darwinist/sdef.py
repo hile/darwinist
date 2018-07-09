@@ -6,18 +6,19 @@ import os
 from subprocess import check_output
 from lxml import etree as ET
 
+
 class SDEFError(Exception):
     pass
 
 
 class SDEF(object):
-    def __init__(self,path):
+    def __init__(self, path):
         self.path = path
         if not os.path.isdir(path):
             raise SDEFError('Not a directory: {0}'.format(path))
         self.tree = ET.fromstring(check_output(['sdef', path]))
 
-    def __getattr__(self,attr):
+    def __getattr__(self, attr):
         if attr == 'terms':
             return self.__generate_terms()
 
@@ -30,33 +31,33 @@ class SDEF(object):
         commands = []
         for suite in self.tree.xpath('suite'):
             for node in suite.xpath('class'):
-                name = node.get('name').replace(' ','_')
+                name = node.get('name').replace(' ', '_')
                 code = node.get('code')
-                classes.append((name,code))
+                classes.append((name, code))
                 if node.get('inherits') is None:
                     continue
-                element = node.get('plural').replace(' ','_')
-                elements.append((element,code))
+                element = node.get('plural').replace('  _')
+                elements.append((element, code))
 
             for node in suite.xpath('enumeration/enumerator'):
-                name = node.get('name').replace(' ','_')
+                name = node.get('name').replace(' ', '_')
                 code = node.get('code')
-                enums.append((name,code))
+                enums.append((name, code))
 
             for node in suite.xpath('class/property'):
-                name = node.get('name').replace(' ','_')
+                name = node.get('name').replace(' ', '_')
                 code = node.get('code')
-                properties.append((name,code))
+                properties.append((name, code))
 
             for node in suite.xpath('command'):
-                name = node.get('name').replace(' ','_')
+                name = node.get('name').replace(' ', '_')
                 code = node.get('code')
                 cparams = []
                 for p in node.xpath('parameter'):
-                    pname = p.get('name').replace(' ','_')
+                    pname = p.get('name').replace(' ', '_')
                     pcode = p.get('code')
-                    cparams.append((pname,pcode))
-                commands.append((name,code,cparams))
+                    cparams.append((pname, pcode))
+                commands.append((name, code, cparams))
 
         output += '\nclasses = {0}'.format(classes)
         output += '\nenums = {0}'.format(enums)

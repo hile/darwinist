@@ -39,13 +39,13 @@ class DiskInfo(dict):
         if not os.access(device, os.R_OK):
             raise DiskUtilError('Device not readable: {0}'.format(device))
 
-        cmd = ( 'diskutil', 'info', '-plist', device, )
+        cmd = ('diskutil', 'info', '-plist', device)
         p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
         try:
             plist = BytesIO(stdout)
             self.update(plistlib.readPlist(plist))
-        except ExpatError as e:
+        except ExpatError:
             raise DiskUtilError('Error parsing plist: {0}'.format(stdout))
 
         if 'TotalSize' in self and 'FreeSpace' in self:

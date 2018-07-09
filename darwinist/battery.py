@@ -2,7 +2,7 @@
 Wrapper to get OS/X darwin laptop battery status from command line
 """
 
-from darwinist.ioreg import IORegTree, IORegError
+from darwinist.ioreg import IORegTree
 
 BATTERY_IGNORE_FIELDS = (
     'CellVoltage',
@@ -16,20 +16,20 @@ BATTERY_FIELD_FORMATS = {
     'Amperage': lambda x: int(x),
     'AvgTimeToEmpty': lambda x: int(x),
     'AvgTimeToFull': lambda x: int(x),
-    'BatteryInstalled': lambda x: x=='Yes' and True or False,
+    'BatteryInstalled': lambda x: x == 'Yes' and True or False,
     'BatteryInvalidWakeSeconds': lambda x: int(x),
     'BatterySerialNumber': lambda x: str(x).strip('" '),
     'CurrentCapacity': lambda x: int(x),
     'CycleCount': lambda x: int(x),
     'DesignCapacity': lambda x: int(x),
     'DeviceName': lambda x: str(x).strip('" '),
-    'ExternalChargeCapable': lambda x: x=='Yes' and True or False,
-    'ExternalConnected': lambda x: x=='Yes' and True or False,
+    'ExternalChargeCapable': lambda x: x == 'Yes' and True or False,
+    'ExternalConnected': lambda x: x == 'Yes' and True or False,
     'FirmwareSerialNumber': lambda x: int(x),
-    'FullyCharged': lambda x: x=='Yes' and True or False,
+    'FullyCharged': lambda x: x == 'Yes' and True or False,
     'InstantAmperage': lambda x: int(x),
     'InstantTimeToEmpty': lambda x: int(x),
-    'IsCharging': lambda x: x=='Yes' and True or False,
+    'IsCharging': lambda x: x == 'Yes' and True or False,
     'Location': lambda x: int(x),
     'Manufacturer': lambda x: str(x).strip('" '),
     'MaxCapacity': lambda x: int(x),
@@ -41,6 +41,7 @@ BATTERY_FIELD_FORMATS = {
     'TimeRemaining': lambda x: int(x),
     'Voltage': lambda x: float(x) / 1000,
 }
+
 
 class Batteries(list):
     """

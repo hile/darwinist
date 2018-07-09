@@ -2,7 +2,6 @@
 Module to parse output from 'ioreg' command to python data structures
 """
 
-import sys
 import os
 import re
 from subprocess import Popen, PIPE
@@ -10,6 +9,7 @@ from subprocess import Popen, PIPE
 IOREG_COMMAND = '/usr/sbin/ioreg'
 
 RE_IOREG_HEADER = re.compile('^\+-o\s(?P<name>.*)\s+<class (?P<ioclass>[\w]+),(?P<flags>[^>]*)')
+
 
 class IORegError(Exception):
     """
@@ -28,7 +28,7 @@ class IORegItem(object):
         except ValueError:
             try:
                 key, value = line.split(':', 1)
-            except ValueError as e:
+            except ValueError:
                 raise IORegError('Error splitting item line {0}'.format(line))
 
         self.key = key.rstrip().strip('"')
@@ -36,6 +36,7 @@ class IORegItem(object):
 
     def __repr__(self):
         return '{0}: {1}'.format(self.key, self.value)
+
 
 class IORegGroup(dict):
     """
@@ -85,19 +86,17 @@ class IORegTree(list):
 
         parent = None
         group = None
-        entries = []
-        for l in [l.decode('utf-8').lstrip(' |').rstrip() for l in stdout.splitlines()]:
-            if l in ['', '{']:
+        for line in [l.decode('utf-8').lstrip(' |').rstrip() for l in stdout.splitlines()]:
+            if line in ['', '{']:
                 continue
 
-            elif l[:3] == '+-o':
-                group = IORegGroup(parent, l)
+            elif line[:3] == '+-o':
+                group = IORegGroup(parent, line)
                 parent = group
                 self.append(group)
 
-            elif l == '}':
+            elif line == '}':
                 group = None
 
             elif group is not None:
-                group.append(l)
-
+                group.append(line)

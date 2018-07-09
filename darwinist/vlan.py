@@ -13,6 +13,7 @@ VLANLIST_LINE_MAP = {
     'tag': 'Tag:',
 }
 
+
 class VLANError(Exception):
     pass
 
@@ -43,6 +44,7 @@ class VLAN(object):
         if p.returncode != 0:
             raise VLANError('ERROR removing VLAN {0}'.format(self.tag))
 
+
 class VLANList(list):
     def __init__(self):
         cmd = ['networksetup', '-listVLANs']
@@ -61,7 +63,7 @@ class VLANList(list):
                 entry = None
 
             for k, v in VLANLIST_LINE_MAP.items():
-                if l[:len(v)] == v:
+                if line[:len(v)] == v:
                     if entry is None:
                         entry = VLAN()
                     setattr(entry, k, line[len(v):].lstrip())

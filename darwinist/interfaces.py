@@ -15,21 +15,22 @@ RE_INET6_LINE = [
     re.compile('^\s+inet6\s+(?P<address>[0-9:a-f]+)%(?P<scope>[^s]+)\s+prefixlen\s+(?P<prefix>\d+)\s+scopeid\s+(?P<scope_id>[x0-9a-f]+)$'),
 ]
 
+
 class NetworkInterfaces(list):
     def __init__(self):
         p = Popen(['/sbin/ifconfig'], stdin=PIPE, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
 
         interface = None
-        for l in [x.rstrip() for x in stdout.split('\n')]:
-            if l.strip()=='':
+        for line in [x.rstrip() for x in stdout.split('\n')]:
+            if line.strip() == '':
                 continue
 
-            if l.startswith('	'):
-                interface.parse(l)
+            if line.startswith('	'):
+                interface.parse(line)
 
             else:
-                name, flags = l.split(':', 1)
+                name, flags = line.split(':', 1)
                 if interface:
                     self.append(interface)
                 interface = Interface(name, flags)
@@ -75,7 +76,7 @@ class Interface(dict):
 
         try:
             key, value = line.strip().split(None, 1)
-            if key=='ether':
+            if key == 'ether':
                 value = EthernetMACAddress(value)
 
         except ValueError:

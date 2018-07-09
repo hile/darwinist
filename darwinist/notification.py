@@ -3,10 +3,9 @@ Send notifications to OS/X Mountain Lion notification center
 """
 
 import Foundation
-import AppKit
 import objc
 import time
-from PyObjCTools import AppHelper
+
 
 class NotificationCenter(object):
     def __init__(self):
@@ -29,7 +28,7 @@ class NotificationCenter(object):
         notification.setSoundName_("NSUserNotificationDefaultSoundName")
 
         if url is not None:
-            notification.setUserInfo_({ "action":"open_url", "value": url, })
+            notification.setUserInfo_({"action": "open_url", "value": url})
 
         user_notification_center.scheduleNotification_(notification)
 

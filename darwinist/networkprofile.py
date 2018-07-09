@@ -8,7 +8,6 @@ from configobj import ConfigObj
 
 NETWORK_CONNECTION_TYPES = {
     'wlan':         [2],
-    'dialup':       [7, 8],  # Both bluetooth and USB 3G connections
     'thunderbolt':  [5],
     'ethernet':     [6],
     'dialup':       [7, 8],  # Both bluetooth and USB 3G connections
@@ -64,13 +63,13 @@ class NetworkProfileList(object):
         """
         Return (name,NetworkConnection() list based on self.keys()
         """
-        return [(k, NetworkConnection(k,profiles=self)) for k in self.keys()]
+        return [(k, NetworkConnection(k, profiles=self)) for k in self.keys()]
 
     def values(self):
         """
         Return NetworkConnection() list based on self.keys()
         """
-        return [NetworkConnection(k,profiles=self) for k in self.keys()]
+        return [NetworkConnection(k, profiles=self) for k in self.keys()]
 
     def filter(self, connection_type):
         """
@@ -95,6 +94,7 @@ class NetworkProfileList(object):
 
         return filtered
 
+
 class NetworkConnection(object):
     """
     Details and control of one OS/X network connection
@@ -114,17 +114,12 @@ class NetworkConnection(object):
         except KeyError as e:
             raise NetworkConfigError(str(e).strip("'"))
 
-    def __cmp__(self, other):
+    def __eq__(self, other):
         if not hasattr(other, 'app'):
             return 0
 
         if self.connection_type != other.connection_type:
-            return cmp(self.connection_type, other.connection_type)
-
-        if hasattr(self, 'name') and hasattr(other, 'name'):
-            return cmp(self.name, other.name)
-
-        return 0
+            return
 
     def __hash__(self):
         return '{0} {1}'.format(self.connection_type, self.name)
@@ -139,10 +134,13 @@ class NetworkConnection(object):
     def get_interface_attribute(self, item):
         try:
             interface = self.connection.interface.get()
-            return getattr(interface,item).get()
+            return getattr(interface, item).get()
 
         except appscript.reference.CommandError:
-            raise AttributeError('Value {0} not available for interface {1}'.format(item, self.name))
+            raise AttributeError('Value {0} not available for interface {1}'.format(
+                item,
+                self.name
+            ))
 
     @property
     def mac(self):
@@ -164,7 +162,7 @@ class NetworkConnection(object):
     def connection_type(self):
         for k, values in NETWORK_CONNECTION_TYPES.items():
             if self.kind in values:
-                 return k
+                return k
         return 'unknown'
 
     @property
@@ -196,4 +194,3 @@ class NetworkConnection(object):
             raise NetworkConfigError('Not connected: {0}'.format(self.name))
 
         self.app.disconnect(self.connection)
-

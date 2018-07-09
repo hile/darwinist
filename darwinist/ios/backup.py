@@ -6,6 +6,7 @@ import os
 import plistlib
 import sqlite3
 
+from operator import attrgetter
 from datetime import datetime, timedelta
 from subprocess import Popen, PIPE
 from xml.parsers.expat import ExpatError
@@ -70,22 +71,15 @@ class IOSDatabaseBackup(object):
 
 
 class SortedContainer(object):
-    compare_fields = ()
+
+    sort_keys = ()
+
     def __init__(self):
         self.__cached_data__ = {}
 
-    def __cmp__(self, other):
-        for key in self.compare_fields:
-            a = getattr(self, key)
-            b = getattr(other, key)
-            if a != b:
-                return cmp(a, b)
-
-        return 0
-
 
 class Handle(SortedContainer):
-    compare_fields = ( 'country', 'service', 'id', 'number', )
+    sort_keys = ('country', 'service', 'id', 'number')
 
     def __init__(self, database, handle_id, country, service, number):
         super(Handle, self).__init__()
@@ -100,7 +94,7 @@ class Handle(SortedContainer):
 
 
 class Message(SortedContainer):
-    compare_fields = ('database', 'date', )
+    sort_keys = ('database', 'date')
 
     def __init__(self, database, message_id, sender_handle_id, date, subject, text, is_from_me):
         super(Message, self).__init__()
@@ -127,7 +121,9 @@ class Message(SortedContainer):
 
 
 class Chat(SortedContainer):
-    compare_fields = ( 'id', )
+
+    sort_keys = ('id',)
+
     def __init__(self, database, chat_id):
         self.database = database
         self.id = chat_id
@@ -155,7 +151,7 @@ class Chat(SortedContainer):
         for message in self.database.messages:
             if message.id in message_ids:
                 messages.append(message)
-        return sorted(messages)
+        return sorted(messages, key=attrgetter(*Message.sort_keys))
 
 
 class SMSDatabase(IOSDatabaseBackup):
@@ -186,19 +182,31 @@ class SMSDatabase(IOSDatabaseBackup):
     def fetch_handles(self):
         cursor = self.cursor
         cursor.execute("""SELECT rowid, country, service, id FROM handle""")
-        self.__cached_data__['handles'] = sorted([Handle(self, *data) for data in cursor.fetchall()])
+        self.__cached_data__['handles'] = sorted(
+            [Handle(self, *data) for data in cursor.fetchall()],
+            key=attrgetter(Handle.sort_keys)
+        )
         return self.__cached_data__['handles']
 
     def fetch_messages(self):
         cursor = self.cursor
-        cursor.execute("""SELECT rowid AS message_id, handle_id AS sender_handle_id, date, subject, text, is_from_me FROM message""")
-        self.__cached_data__['messages'] = sorted(Message(self, *data) for data in cursor.fetchall())
+        cursor.execute("""
+            SELECT rowid AS message_id, handle_id AS sender_handle_id, date, subject, text, is_from_me
+            FROM message
+        """)
+        self.__cached_data__['messages'] = sorted(
+            [Message(self, *data) for data in cursor.fetchall()],
+            key=attrgetter(*Message.sort_keys)
+        )
         return self.__cached_data__['messages']
 
     def fetch_chats(self):
         cursor = self.cursor
         cursor.execute("""SELECT rowid FROM chat""")
-        self.__cached_data__['chats'] = sorted(Chat(self, *data) for data in cursor.fetchall())
+        self.__cached_data__['chats'] = sorted(
+            [Chat(self, *data) for data in cursor.fetchall()],
+            key=attrgetter(*Chat.sort_keys)
+        )
         return self.__cached_data__['chats']
 
     def find_handle(self, handle_id):
@@ -226,7 +234,7 @@ class ContactProperty(object):
 
 
 class Contact(SortedContainer):
-    compare_fields = ( 'last', 'middle', 'first', )
+    sort_keys = ('last', 'middle', 'first')
 
     def __init__(self, database, contact_id, first, last, middle):
         super(Contact, self).__init__()
@@ -342,8 +350,8 @@ class IOSBackup(object):
 
         try:
             plist = self.__read_binary_plist__(path)
-        except ExpatError, emsg:
-            raise IOSBackupError('Error reading {0}: {1}'.format(path, emsg))
+        except ExpatError as e:
+            raise IOSBackupError('Error reading {0}: {1}'.format(path, e))
 
         try:
             return plist['UserAssignedDeviceName']
@@ -354,8 +362,8 @@ class IOSBackup(object):
     def updated(self):
         try:
             return datetime.fromtimestamp(os.stat(self.path).st_mtime)
-        except OSError, (ecode, emsg):
-            raise IOSBackupError('Error checking mtime of %s: %s' % (self.path, emsg))
+        except OSError as e:
+            raise IOSBackupError('Error checking mtime of %s: %s' % (self.path, e))
 
     @property
     def id(self):
@@ -365,13 +373,12 @@ class IOSBackup(object):
 class IOSDeviceBackups(list):
     def __init__(self, path=BACKUP_PATH):
         if not os.path.isdir(path):
-            raise IOSBackupError('Not a directory: %s' % (path))
+            raise IOSBackupError('Not a directory: {}'.format(path))
 
         try:
-            paths = [os.path.join(path,name) for name in os.listdir(path)]
-        except OSError, (ecode, emsg):
-            raise IOSBackupError('Error listing directory %s: %s' % (path, emsg))
+            paths = [os.path.join(path, name) for name in os.listdir(path)]
+        except OSError as e:
+            raise IOSBackupError('Error listing directory {}: {}'.format(path, e))
 
         for path in paths:
             self.append(IOSBackup(path))
-

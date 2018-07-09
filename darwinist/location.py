@@ -9,8 +9,10 @@ import CoreLocation
 
 API_URL = """http://maps.googleapis.com/maps/api/geocode/json?latlng=%(latitude)s,%(longitude)s&sensor=false"""
 
+
 class CoreLocationError(Exception):
     pass
+
 
 class CoreLocationManager(object):
     def __init__(self):
@@ -45,7 +47,9 @@ class CoreLocationManager(object):
         url = API_URL % {'latitude': coordinates.latitude, 'longitude': coordinates.longitude, }
         response = requests.get(url)
         if response.status_code != 200:
-            raise CoreLocationError('Error querying google maps API: returns status code {0}'.format(response.status_code))
+            raise CoreLocationError('Error querying google maps API: returns status code {0}'.format(
+                response.status_code
+            ))
 
         addresses = []
         try:

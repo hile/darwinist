@@ -37,7 +37,7 @@ class TmUtilVersion(dict):
                         try:
                             self['builddate'] = datetime.strptime(self['builddate'], datefmt)
                             break
-                        except:
+                        except:  # noqa
                             pass
                     if not isinstance(self['builddate'], datetime):
                         raise TimeMachineError('Error parsing build date {0}'.format(self['builddate']))
@@ -76,7 +76,7 @@ class TimeMachineUtility(object):
         if isinstance(args, str):
             args = [args]
 
-        cmd = [ TMUTIL ] + args
+        cmd = [TMUTIL] + args
         p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         stdout, stderr = p.communicate()
         return p.returncode, stdout, stderr

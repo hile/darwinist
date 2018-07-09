@@ -14,6 +14,7 @@ INFO_BUNDLE_NAME_MAP = {
     'short_version':    'CFBundleShortVersionString',
 }
 
+
 class ApplicationError(Exception):
     pass
 
@@ -46,12 +47,13 @@ class Application(object):
     def version(self):
         info = self.info
 
-        for key in ( 'version', 'short_version', ):
+        for key in ('version', 'short_version'):
             value = getattr(info, key)
             if value is not None:
                 return value
 
         return 'UNKNOWN'
+
 
 class ApplicationInfo(dict):
     """
@@ -70,9 +72,9 @@ class ApplicationInfo(dict):
             raise ApplicationError('Error parsing {0}: {1}'.format(self.path, e))
 
     def __repr__(self):
-        return unicode('{0} {1}'.format(self.name, self.version))
+        return str('{0} {1}'.format(self.name, self.version))
 
-    def __getattr__(self,attr):
+    def __getattr__(self, attr):
         if attr in INFO_BUNDLE_NAME_MAP.keys():
             attr = INFO_BUNDLE_NAME_MAP[attr]
 

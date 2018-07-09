@@ -2,6 +2,7 @@
 Module for Apple OS/X airport status command access from python
 """
 
+from operator import itemgetter
 import os
 from subprocess import check_output, CalledProcessError
 
@@ -39,7 +40,7 @@ class AirportStatus(dict):
         """
         self.clear()
 
-        cmd = ( AIRPORT_BINARY, '-I', )
+        cmd = (AIRPORT_BINARY, '-I')
         try:
             data = check_output(cmd)
         except CalledProcessError as e:
@@ -55,8 +56,8 @@ class AirportStatus(dict):
             except ValueError:
                 raise AirportError('Error parsing line: {0}'.format(line))
 
-        for key in ( 'BSSID', ):
-            if not self.has_key(key):
+        for key in ('BSSID',):
+            if key not in self:
                 continue
             self[key] = ':'.join(['%02x'.upper() % int(x, 16) for x in self[key].split(':')])
 
@@ -64,14 +65,14 @@ class AirportStatus(dict):
         """
         Return proximity of base stations based on signal levels
         """
-        headers = ( 'SSID', 'BSSID', 'RSSI', 'CHANNEL', 'HT', 'CC', 'SECURITY', )
+        headers = ('SSID', 'BSSID', 'RSSI', 'CHANNEL', 'HT', 'CC', 'SECURITY')
         aps = []
 
-        cmd = ( AIRPORT_BINARY, '-s', self.SSID, )
+        cmd = (AIRPORT_BINARY, '-s', self.SSID)
         try:
             data = check_output(cmd)
         except CalledProcessError as e:
-            raise AirportError('Error running {0}: {1}'.format(' '.join(cmd), emsg))
+            raise AirportError('Error running {0}: {1}'.format(' '.join(cmd), e))
             return
 
         for line in [line.decode('utf-8') for line in data.splitlines()]:
@@ -82,9 +83,9 @@ class AirportStatus(dict):
             if headers[:5] == [x.strip() for x in line.split()][:5]:
                 continue
 
-            ssid =  line[:32].lstrip()
+            ssid = line[:32].lstrip()
             bssid = line[33:50].strip("'").upper()
-            rssi =  int(line[51:55].strip())
+            rssi = int(line[51:55].strip())
             channel = int(line[56:58].strip())
             aps.append({
                 'SSID': ssid,
@@ -93,6 +94,5 @@ class AirportStatus(dict):
                 'CHANNEL': channel,
             })
 
-        aps.sort(lambda x,y: cmp(y['RSSI'], x['RSSI']))
+        aps.sort(key=itemgetter('RSSI'))
         return aps
-

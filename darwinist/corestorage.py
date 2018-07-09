@@ -5,6 +5,8 @@ just a wrapper to parse output from the command line commands to
 dictionaries, grouping the hierarchy for easy consumption.
 """
 
+from builtins import int
+
 import re
 from subprocess import check_output, CalledProcessError
 
@@ -73,13 +75,13 @@ class coreStorage(list):
         lvf = None
         lv = None
 
-        cmd = ( 'diskutil', 'coreStorage', 'list', )
+        cmd = ('diskutil', 'coreStorage', 'list')
         try:
             for line in check_output(cmd).splitlines():
                 line = line.decode('utf-8').lstrip('|+-<> ')
 
                 if line.strip() == '' or line.strip('-=') == '':
-                 continue
+                    continue
 
                 m = re_header.match(line)
                 if m:
@@ -117,7 +119,7 @@ class coreStorage(list):
                     continue
                 try:
                     key, value = line.strip().split(':', 1)
-                except ValueError as e:
+                except ValueError:
                     continue
 
                 if lv is not None:
@@ -223,9 +225,9 @@ class coreStorageLV(dict):
         except KeyError:
             pass
 
-        if item in ( 'size', 'free_space', 'size_total', 'size_converted', ):
+        if item in ('size', 'free_space', 'size_total', 'size_converted'):
             m = re_size.match(value)
             if m:
-                value = long(m.group(1))
+                value = int(m.group(1))
 
         super(coreStorageLV, self).__setitem__(item, value)

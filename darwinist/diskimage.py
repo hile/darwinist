@@ -39,7 +39,6 @@ class DiskImagesConfig(dict):
             if not isinstance(options, Section):
                 continue
 
-            diskimage_opts = {}
             for arg, value in options.items():
                 if arg not in VALID_CONFIG_ARGS:
                     raise DiskImageError('Invalid option: {0}'.format(arg))
@@ -95,7 +94,7 @@ class DiskImage(object):
     def __getattr__(self, attr):
         if attr == 'connected':
             try:
-                if self.info.has_key('MountPoint'):
+                if 'MountPoint' in self.info:
                     return True
                 return False
             except AttributeError:
@@ -113,7 +112,7 @@ class DiskImage(object):
         if not self.connected:
             raise DiskImageError('Not attached: {0}'.format(self.mountpoint))
 
-        cmd = ( 'hdiutil', 'detach', self.mountpoint, )
+        cmd = ('hdiutil', 'detach', self.mountpoint)
         p = Popen(cmd, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr)
         p.wait()
         if p.returncode != 0:
@@ -123,7 +122,7 @@ class DiskImage(object):
         if self.connected:
             raise DiskImageError('Already attached: {0}'.format(self.mountpoint))
 
-        cmd = [ 'hdiutil', 'attach' ] + self.args + [self.image]
+        cmd = ['hdiutil', 'attach'] + self.args + [self.image]
 
         if passphrase is None:
             p = Popen(cmd, stdin=sys.stdin, stdout=sys.stdout, stderr=sys.stderr)
@@ -134,4 +133,3 @@ class DiskImage(object):
         p.wait()
         if p.returncode != 0:
             raise DiskImageError('Error attaching {0}'.format(self.image))
-

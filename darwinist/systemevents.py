@@ -29,6 +29,7 @@ FOLDER_NAME_MAP = {
     'workflows': 'workflows_folder',
 }
 
+
 class SystemEventsError(Exception):
     """
     Exceptions for OS/X system events
@@ -49,6 +50,7 @@ class OSXUserAccounts(dict):
         for ref in self.app.users.get():
             u = OSXUserAccount(self, ref)
             self[u.name] = u
+
 
 class OSXUserAccount(dict):
     """
@@ -89,6 +91,7 @@ class OSXUserAccount(dict):
         """
         return [(k, self[k]) for k in self.keys()]
 
+
 class OSXUserFolders(dict):
     """
     List of OS/X user folders from system events API
@@ -106,6 +109,7 @@ class OSXUserFolders(dict):
                 continue
 
             self[k] = OSXFolderItem(self, ref)
+
 
 class OSXFolderItem(dict):
     """
