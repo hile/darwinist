@@ -15,7 +15,7 @@ setup(
     scripts=glob.glob('bin/*'),
     packages=find_packages(),
     install_requires=(
-        'systematic>=4.8.0',
+        'systematic>=4.8.3',
         'appscript',
     ),
 )
