@@ -8,11 +8,11 @@ from seine.address import EthernetMACAddress, IPv4Address, IPv6Address
 
 RE_INET_LINE = [
     re.compile('^\s+inet\s+(?P<address>[0-9.]+)\s+netmask\s+(?P<netmask>[.x0-9a-f]+)$'),
-    re.compile('^\s+inet\s+(?P<address>[0-9.]+)\s+netmask\s+(?P<netmask>[.x0-9a-f]+)\s+broadcast\s+(?P<broadcast>[0-9.]+)$'),
+    re.compile('^\s+inet\s+(?P<address>[0-9.]+)\s+netmask\s+(?P<netmask>[.x0-9a-f]+)\s+broadcast\s+(?P<broadcast>[0-9.]+)$'), # noqa
 ]
 RE_INET6_LINE = [
     re.compile('^\s+inet6\s+(?P<address>[0-9:a-f]+)\s+prefixlen\s+(?P<prefix>\d+)$'),
-    re.compile('^\s+inet6\s+(?P<address>[0-9:a-f]+)%(?P<scope>[^s]+)\s+prefixlen\s+(?P<prefix>\d+)\s+scopeid\s+(?P<scope_id>[x0-9a-f]+)$'),
+    re.compile('^\s+inet6\s+(?P<address>[0-9:a-f]+)%(?P<scope>[^s]+)\s+prefixlen\s+(?P<prefix>\d+)\s+scopeid\s+(?P<scope_id>[x0-9a-f]+)$'), # noqa
 ]
 
 

@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
-USAGE = """Get command for OS/X
-
-Very basic implementation of getent command for OS/X
-"""
-
 import grp
 import pwd
 from systematic.shell import Script, ScriptCommand
 from systematic.user import UnixPasswordDB, DatabaseError
+
+USAGE = """Get command for OS/X
+
+Very basic implementation of getent command for OS/X
+"""
 
 
 class GetEntCommand(ScriptCommand):
@@ -18,39 +18,52 @@ class GetEntCommand(ScriptCommand):
 
 
 class PasswdCommand(GetEntCommand):
+	def print_user(self, user):
+		return self.message(':'.join([
+			'{}'.format(user.username),
+			'{}'.format(user.password),
+			'{}'.format(user.uid),
+			'{}'.format(user.gid),
+			'{}'.format(user.gecos),
+			'{}'.format(user.directory),
+			'{}'.format(user.shell),
+		]))
+
 	def run(self, args):
 		self.accounts.load_users()
-		for name in args.names:
-			try:
-				user = self.accounts.lookup_user(name)
-				script.message(':'.join([
-					'{0}'.format(user.username),
-					'{0}'.format(user.password),
-					'{0}'.format(user.uid),
-					'{0}'.format(user.gid),
-					'{0}'.format(user.gecos),
-					'{0}'.format(user.directory),
-					'{0}'.format(user.shell),
-				]))
-			except DatabaseError:
-				pass
+
+		if args.names:
+			for name in args.names:
+				try:
+					self.print_user(self.accounts.lookup_user(name))
+				except DatabaseError:
+					pass
+
+		else:
+			for user in self.accounts.users:
+				self.print_user(user)
 
 
 class GroupCommand(GetEntCommand):
+	def print_group(self, group):
+		self.message(':'.join([
+			'{}'.format(group.name),
+			'{}'.format(group.password),
+			'{}'.format(group.gid),
+			','.join(group.member_uids),
+		]))
+
 	def run(self, args):
 		self.accounts.load_groups()
-		for name in args.names:
-			try:
-				group = self.accounts.lookup_group(name)
-				script.message(':'.join([
-					'{0}'.format(group.name),
-					'{0}'.format(group.password),
-					'{0}'.format(group.gid),
-					','.join(group.member_uids),
-				]))
-			except DatabaseError:
-				pass
-
+		if args.names:
+			for name in args.names:
+				try:
+					self.print_group(self.accounts.lookup_group(name))
+				except DatabaseError:
+					pass
+		else:
+			for group in self.accounts.groups:
+				self.print_group(group)
 
 script = Script(USAGE)
 

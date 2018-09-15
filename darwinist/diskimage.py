@@ -39,7 +39,7 @@ class DiskImagesConfig(dict):
             if not isinstance(options, Section):
                 continue
 
-            for arg, value in options.items():
+            for arg in options.keys():
                 if arg not in VALID_CONFIG_ARGS:
                     raise DiskImageError('Invalid option: {0}'.format(arg))
 
@@ -58,7 +58,7 @@ class DiskImagesConfig(dict):
         if value in self.keys():
             return self[value]
 
-        for name, dmg in self.items():
+        for dmg in self.values():
             if dmg.image == value:
                 return dmg
 
