@@ -62,7 +62,9 @@ class Battery(dict):
             if key in BATTERY_IGNORE_FIELDS:
                 continue
 
-            if key in BATTERY_FIELD_FORMATS.keys():
+            if key.lower() == 'manufacturedate':
+                self[key.lower()] = self.__calculate_manufacture_date__(value.value)
+            elif key in BATTERY_FIELD_FORMATS.keys():
                 self[key.lower()] = BATTERY_FIELD_FORMATS[key](value.value)
             else:
                 self[key.lower()] = value.value
@@ -71,6 +73,17 @@ class Battery(dict):
             self['percent'] = int(round(float(self.currentcapacity) / self.maxcapacity * 100))
         else:
             self['percent'] = 'UNKNOWN'
+
+    def __calculate_manufacture_date__(self, value):
+        """
+        Based on battery controller datasheet
+        http://www.ti.com/lit/er/sluu313a/sluu313a.pdf
+        """
+        value = int(value)
+        year = (value >> 9) + 1980
+        month = (value & 0b0000000111111111) >> 5
+        day = value & 0b11111
+        return '{}-{:02d}-{:02d}'.format(year, month, day)
 
     def __getattr__(self, attr):
         try:
