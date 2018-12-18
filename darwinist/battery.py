@@ -57,17 +57,18 @@ class Battery(dict):
     """Battery details
 
     """
-    def __init__(self, details={}):
-        for key, value in details.items():
-            if key in BATTERY_IGNORE_FIELDS:
-                continue
+    def __init__(self, details=None):
+        if details:
+            for key, value in details.items():
+                if key in BATTERY_IGNORE_FIELDS:
+                    continue
 
-            if key.lower() == 'manufacturedate':
-                self[key.lower()] = self.__calculate_manufacture_date__(value.value)
-            elif key in BATTERY_FIELD_FORMATS.keys():
-                self[key.lower()] = BATTERY_FIELD_FORMATS[key](value.value)
-            else:
-                self[key.lower()] = value.value
+                if key.lower() == 'manufacturedate':
+                    self[key.lower()] = self.__calculate_manufacture_date__(value.value)
+                elif key in BATTERY_FIELD_FORMATS.keys():
+                    self[key.lower()] = BATTERY_FIELD_FORMATS[key](value.value)
+                else:
+                    self[key.lower()] = value.value
 
         if 'currentcapacity' in self and 'maxcapacity' in self:
             self['percent'] = int(round(float(self.currentcapacity) / self.maxcapacity * 100))

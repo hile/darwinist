@@ -25,10 +25,10 @@ class NotificationCenter(object):
         notification.setTitle_(str(title))
         notification.setSubtitle_(str(subtitle))
         notification.setInformativeText_(str(text))
-        notification.setSoundName_("NSUserNotificationDefaultSoundName")
+        notification.setSoundName_('NSUserNotificationDefaultSoundName')
 
         if url is not None:
-            notification.setUserInfo_({"action": "open_url", "value": url})
+            notification.setUserInfo_({'action': 'open_url', 'value': url})
 
         user_notification_center.scheduleNotification_(notification)
 
@@ -44,6 +44,6 @@ class Notification(Foundation.NSObject):
         pass
 
         userInfo = notification.userInfo()
-        if userInfo["action"] == "open_url":
+        if userInfo['action'] == 'open_url':
             import subprocess
-            subprocess.Popen(['open', userInfo["value"]])
+            subprocess.Popen(['open', userInfo['value']])
